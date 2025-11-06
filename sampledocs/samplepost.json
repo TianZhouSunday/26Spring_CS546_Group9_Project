@@ -1,0 +1,17 @@
+{
+    "_id": "507f1f77bcf86cd799439011",
+    "title": "Dangerous Incident at 175 Fifth Avenue",
+    "body": "I was at this location and I saw a man doing abc and then xyz",
+    "date": "2025-11-06T00:21:14.431Z",
+    "location": 
+        {
+            "longitude": 40.7411, 
+            "latitude": -73.9897
+        },
+    "sensitive": false,
+    "post_score": 0,
+    "user": "690ba1fad8d421f3da2908f1",
+    "comments": ["690ba1d9a6fd31f3a68dd55d, 690ba1e7b0779667c4e480df"],
+    "reports": ["690be8a5657e5a7c37b0ceca","690be8b12ebddaddec39ab76"]
+}
+
