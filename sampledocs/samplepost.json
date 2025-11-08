@@ -2,6 +2,7 @@
     "_id": "507f1f77bcf86cd799439011",
     "title": "Dangerous Incident at 175 Fifth Avenue",
     "body": "I was at this location and I saw a man doing abc and then xyz",
+    "photo": "/static/posts/photo.jpg",
     "date": "2025-11-06T00:21:14.431Z",
     "location": 
         {
