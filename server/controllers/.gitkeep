@@ -1,0 +1,6 @@
+# Controllers folder
+# This folder can be used to organize route handlers if the team wants to separate concerns
+# Currently, route handlers are in the routes/ folder
+
+
+
