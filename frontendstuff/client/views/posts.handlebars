@@ -1,0 +1,100 @@
+<h1>Recent Safety Incidents</h1>
+
+{{
+#if
+ user}}
+<div class="action-bar">
+    <a href="/posts/new" class="btn-primary">Report New Incident</a>
+</div>
+{{else}}
+<div class="info-box">
+    <p><a href="/login">Login</a> or <a href="/signup">Sign up</a> to report incidents and join discussions.</p>
+</div>
+{{
+/if
+}}
+
+{{
+#if
+ posts}}
+<div class="posts-container">
+    {{
+#each
+ posts}}
+    <article class="post-card">
+        <div class="post-header">
+            <h3><a href="/posts/{{this._id}}">{{this.title}}</a></h3>
+            <span class="post-meta">
+                {{
+#if
+ this.isAnonymous}}
+                    Anonymous
+                {{else}}
+                    by {{this.author.nickname}}
+                {{
+/if
+}}
+                | {{this.borough}}
+            </span>
+        </div>
+        
+        <div class="post-content">
+            <p>{{this.contentPreview}}</p>
+            <p class="post-location">📍 {{this.location}}</p>
+        </div>
+        
+        <div class="post-footer">
+            <span class="post-date">{{this.formattedDate}}</span>
+            {{
+#if
+ this.sensitivity}}
+                {{
+#unless
+ (equals this.sensitivity "low")}}
+                    <span class="sensitivity-badge sensitivity-{{this.sensitivity}}">
+                        {{this.sensitivity}} sensitivity
+                    </span>
+                {{
+/unless
+}}
+            {{
+/if
+}}
+            
+            {{
+#if
+ this.avgRating}}
+                <span class="rating">⭐ {{this.avgRating}}/5 ({{this.ratingCount}} ratings)</span>
+            {{
+/if
+}}
+            
+            {{
+#if
+ this.commentCount}}
+                <span class="comments">💬 {{this.commentCount}} comments</span>
+            {{
+/if
+}}
+        </div>
+        
+        <a href="/posts/{{this._id}}" class="read-more">Read Full Report →</a>
+    </article>
+    {{
+/each
+}}
+</div>
+{{else}}
+<div class="no-posts">
+    <p>No incidents reported yet. Be the first to help your community stay safe!</p>
+    {{
+#if
+ user}}
+        <a href="/posts/new" class="btn-primary">Report an Incident</a>
+    {{
+/if
+}}
+</div>
+{{
+/if
+}}
