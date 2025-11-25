@@ -5,7 +5,7 @@ const SALT_ROUNDS = 16;
 
 const checkString = (str) => {
 		return (typeof(str) === "string" && str.trim().length > 0);
-	}
+}
 
 /**
  * Create a new user.
@@ -13,13 +13,13 @@ const checkString = (str) => {
  * Initialize all other fields in the schema
  */
 export const createUser = async (username, password, email) => {
-	//validate input
+  //validate input
 	if(!checkString(username) || !checkString(password) || !checkString(email)){
-		 throw Error('createUser: Must provide a valid username, password, and email.');
-	}
+    throw Error('createUser: Must provide a valid username, password, and email.');
+  }
   username = username.trim().toLowerCase();
   email = email.trim().toLowerCase();
-  
+
   const userCollection = await users();
 
   // Check duplicates
@@ -37,6 +37,7 @@ export const createUser = async (username, password, email) => {
     username,
     password: hashedPassword,
     email,
+    role: 'user', // Default role is 'user', can be 'admin'
     location: {
       longitude: null,
       latitude: null
@@ -61,10 +62,10 @@ export const createUser = async (username, password, email) => {
  * Validate user credentials for login.
  */
 export const checkUser = async (email, password) => {
-	//validate input
+  //validate input
 	if(!checkString(email) || !checkString(password)){
-		 throw Error('checkUser: must provide valid email and password.');
-	}
+    throw Error('checkUser: must provide valid email and password.');
+  }
   email = email.trim().toLowerCase();
 
 
@@ -79,6 +80,7 @@ export const checkUser = async (email, password) => {
     _id: user._id,
     username: user.username,
     email: user.email,
+    role: user.role || 'user', // Include role in session
     location: user.location,
     profile_picture: user.profile_picture,
     user_score: user.user_score,
