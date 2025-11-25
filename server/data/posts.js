@@ -76,7 +76,7 @@ export const createPost = async (title, body, photo, location, sensitive, user) 
 export const getAllPosts = async () => {
     try {
         const postCollection = await posts();
-        return await postCollection.find({}).sort({date: -1}).toArray();
+        return await postCollection.find({}).sort({ date: -1 }).toArray();
     } catch (e) {
         console.error(e);
         throw "Failed getting all posts in DB";
@@ -95,7 +95,7 @@ export const getPostById = async (id) => {
     //get user by id
     try {
         const postCollection = await posts();
-        const post = await postCollection.findOne({_id: new ObjectId(id)});
+        const post = await postCollection.findOne({ _id: new ObjectId(id) });
 
         if (!post) throw 'Error: Post not found';
 
@@ -117,7 +117,7 @@ export const getPostByUser = async (userId) => {
 
     try {
         const postCollection = await posts();
-        const userPosts = await postCollection.find({user: userId}).sort({date: -1}).toArray();
+        const userPosts = await postCollection.find({ user: userId }).sort({ date: -1 }).toArray();
 
         if (!userPosts) throw 'Error: Posts not found for this user';
 
@@ -134,7 +134,7 @@ export const getPostByUser = async (userId) => {
 export const getPopularPosts = async () => {
     try {
         const postCollection = await posts();
-        return await postCollection.find({}).sort({post_score: -1}).toArray();
+        return await postCollection.find({}).sort({ post_score: -1 }).toArray();
     } catch (e) {
         console.error(e);
         throw "Failed getting popular posts in DB";
@@ -177,7 +177,8 @@ export const updatePost = async (id, updatedPost) => {
 
     //check location
     if (updatedPost.location) {
-        let location = helper.AvailableObj(updatedPost.location, 'location');
+        helper.AvailableObj(updatedPost.location, 'location');
+        let location = updatedPost.location;
         if (!location.hasOwnProperty('longitude')) throw "Location must contain longitude.";
         if (!location.hasOwnProperty('latitude')) throw "Location must contain latitude.";
         if (typeof location.longitude !== 'number' || location.longitude < -74.258 || location.longitude > -73.699) throw "Location must be in NYC";
@@ -190,7 +191,8 @@ export const updatePost = async (id, updatedPost) => {
 
     //check sensitive
     if (updatedPost.sensitive) {
-        let sensitive = helper.AvailableBoolean(updatedPost.sensitive, 'sensitive');
+        let sensitive = updatedPost.sensitive;
+        if (typeof sensitive !== 'boolean') throw "Sensitive must be a boolean.";
         updatedPostData.sensitive = sensitive;
     }
 
@@ -202,8 +204,8 @@ export const updatePost = async (id, updatedPost) => {
         const postCollection = await posts();
         const updatedInfo = await postCollection.updateOne({ _id: new ObjectId(id) }, { $set: updatedPostData });
 
-        if (updateInfo.matchedCount === 0) throw "No post was found with this ID.";
-        if (updateInfo.modifiedCount === 0) console.log("Warning: No changes were made.");
+        if (updatedInfo.matchedCount === 0) throw "No post was found with this ID.";
+        if (updatedInfo.modifiedCount === 0) console.log("Warning: No changes were made.");
 
         console.log("Post successfully updated!", updatedPostData);
         return updatedPostData;
