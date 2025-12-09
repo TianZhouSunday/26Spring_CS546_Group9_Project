@@ -12,7 +12,7 @@
             "latitude": 73.9897
         },
     "profile_picture": "/static/users/pfp.jpg",
-    "user_credit": 0,
+    "user_score": 0,
     "posts": ["690ba1d9a6fd31f3a68dd55d, 690ba1e7b0779667c4e480df"],
     "comments": ["690ba1fad8d421f3da2908f1"],
     "blocked_users": ["690ba1f1f7b107599ff88aa1"],

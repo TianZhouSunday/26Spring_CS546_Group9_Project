@@ -1,19 +1,11 @@
-// app.js
-import express from 'express';
-import session from 'express-session';
-import { dbConnection } from './config/mongoConnection.js';
-import constructorMethod from './routes/index.js';
+import express from "express";
+import session from "express-session";
+import exphbs from "express-handlebars";
+import configureRoutes from "./routes/index.js";
 
 const app = express();
 
 app.use(express.json());
-
-app.use(session({
-  name: 'AuthCookie',
-  secret: 'some secret string',
-  resave: false,
-  saveUninitialized: false
-}));
 
 constructorMethod(app);
 
