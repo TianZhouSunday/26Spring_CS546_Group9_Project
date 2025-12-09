@@ -5,7 +5,7 @@ import {
     getPostById,
     updatePost,
     deletePost,
-    getPostsByUserId,
+    getPostByUser,
     getPopularPosts
 } from '../data/posts.js';
 import helper from '../data/helpers.js';
@@ -46,7 +46,7 @@ router.get('/user/:userId', async (req, res) => {
 
     // Try to fetch from database
     try {
-        const postList = await getPostsByUserId(userId);
+        const postList = await getPostByUser(userId);
         res.json(postList);
     } catch (e) {
         // Check if it's a 404 error
@@ -195,12 +195,12 @@ router.delete('/:id', async (req, res) => {
     try {
         //Delete all associated comments
         if (post.comments && post.comments.length > 0) {
-            await commentData.deleteAllCommentsForPost(id); 
+            // await commentData.deleteAllCommentsForPost(id); 
             console.log(`Deleted ${post.comments.length} associated comments.`);
         }
         //Delete all associated reports
         if (post.reports && post.reports.length > 0) {
-            await reportData.deleteAllReportsForPost(id);
+            // await reportData.deleteAllReportsForPost(id);
             console.log(`Deleted ${post.reports.length} associated reports.`);
         }
 
