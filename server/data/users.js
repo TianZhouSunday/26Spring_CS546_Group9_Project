@@ -118,11 +118,11 @@ export const updateUser = async (
     throw Error('updateUser: Must provide a valid Id, username and email.');
   }
   const userCollection = await users();
-  const _id = ObjectId.isValid(userId) ? ObjectId(userId) : null;
+  const _id = ObjectId.isValid(userId) ? ObjectId.createFromHexString(userId) : null;
   if (!_id) throw new Error('updateUser: invalid user id');
 
   const user = await userCollection.findOne({ _id });
-  if (!user) throw new Error('changePassword: user not found');
+  if (!user) throw new Error('updateUser: user not found');
 
   username = username.trim().toLowerCase();
   email = email.trim().toLowerCase();
@@ -132,15 +132,65 @@ export const updateUser = async (
   }
 
   // Check duplicates
-  const existingUsername = await userCollection.findOne({ username, _id: { $ne: ObjectId.createFromHexString(id) } });
+  const existingUsername = await userCollection.findOne({ username, _id: { $ne: _id } });
   if (existingUsername) throw Error('updateUser: Username already exists');
 
-  const existingEmail = await userCollection.findOne({ email, _id: { $ne: ObjectId.createFromHexString(id) } });
+  const existingEmail = await userCollection.findOne({ email, _id: { $ne: _id } });
   if (existingEmail) throw Error('updateUser: Email already in use');
 
 
-  //validate remaining fields.
-  
+  //validate remaining fields
+  if (phone_number !== null && typeof phone_number !== "string") {
+    throw Error("updateUser: phone_number must be a string or null");
+  }
+
+  if (age !== null) {
+    if (typeof age !== "number" || age < 0 || age > 120) {
+      throw Error("updateUser: age must be a valid number between 0-120 or null");
+    }
+  }
+
+  if (home_address !== null && !checkString(home_address)) {
+    throw Error("updateUser: home_address must be a valid string or null");
+  }
+
+  if (location !== null) {
+    if (typeof location !== "object") {
+      throw Error("updateUser: location must be an object with latitude & longitude");
+    }
+    if (
+      typeof location.latitude !== "number" ||
+      typeof location.longitude !== "number"
+    ) {
+      throw Error("updateUser: location must include valid numeric latitude & longitude");
+    }
+  }
+
+  if (profile_picture !== null && typeof profile_picture !== "string") {
+    throw Error("updateUser: profile_picture must be a string URL or null");
+  }
+
+  const updatedUser = {
+    username,
+    phone_number,
+    email,
+    age,
+    home_address,
+    location,
+    profile_picture
+  };
+
+  //perform update
+  const updateRes = await userCollection.updateOne(
+    { _id },
+    { $set: updatedUser }
+  );
+
+  if (!updateRes.matchedCount) {
+    throw Error("updateUser: Failed to update user.");
+  }
+
+  return { updated: true };
 }
 
 export const changePassword = async (userId, currentPassword, newPassword) => {
