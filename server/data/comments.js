@@ -84,6 +84,18 @@ const exportMethods = {
         const commentCollection = await comments();
         const commentList = await commentCollection.find({ post: postId }).toArray();
         return commentList;
+    },
+
+    async deleteAllCommentsForPost(postId) {
+        postId = helper.AvailableID(postId, 'post ID');
+        const commentCollection = await comments();
+        const commentList = await commentCollection.find({ post: postId }).toArray();
+
+        for (const comment of commentList) {
+            await this.deleteComment(comment._id.toString());
+        }
+
+        return { deleted: true, count: commentList.length };
     }
 };
 

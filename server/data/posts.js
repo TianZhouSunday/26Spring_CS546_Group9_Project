@@ -1,4 +1,5 @@
 import helper from './helpers.js';
+import commentData from './comments.js';
 import { posts } from "../config/mongoCollections.js";
 import { ObjectId } from "mongodb";
 
@@ -240,12 +241,16 @@ export const deletePost = async (id) => {
     //delete post
     try {
         const postCollection = await posts();
+
+        // Delete all associated comments
+        await commentData.deleteAllCommentsForPost(id);
+
         const deletedInfo = await postCollection.deleteOne({ _id: new ObjectId(id) });
 
         if (deletedInfo.deletedCount === 0) throw "No post was found with this ID.";
 
         console.log(`Post(ID: ${id}) successfully deleted!`);
-        return true;
+        return {deleted: true, postId: id};
     } catch (e) {
         console.error(e);
         throw "Failed deleting post in DB.";

@@ -194,11 +194,7 @@ router.delete('/:id', async (req, res) => {
 
     // Try to delete
     try {
-        //Delete all associated comments
-        if (post.comments && post.comments.length > 0) {
-            // await commentData.deleteAllCommentsForPost(id); 
-            console.log(`Deleted ${post.comments.length} associated comments.`);
-        }
+
         //Delete all associated reports
         if (post.reports && post.reports.length > 0) {
             // await reportData.deleteAllReportsForPost(id);

@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { users } from '../config/mongoCollections.js';
-import isEmail from 'validator/lib/isEmail';
+import isEmail from 'validator/lib/isEmail.js';
 import { ObjectId } from "mongodb";
 
 const SALT_ROUNDS = 16;
@@ -28,7 +28,7 @@ export const createUser = async (username, password, email) => {
   const userCollection = await users();
 
   //confirm password is at least 8 characters and contains a number and capital letter
-  if(!password.match(/[0-9]/) || !password.match(/[A-Z]/) || password.trim().length() < 8){
+  if(!password.match(/[0-9]/) || !password.match(/[A-Z]/) || password.trim().length < 8){
     throw Error('createUser: Password must be at least 8 characters and contain a capital letter and a number.');
   }
 
