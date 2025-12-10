@@ -95,11 +95,22 @@ export const getPostById = async (id) => {
     //get user by id
     try {
         const postCollection = await posts();
-        const post = await postCollection.findOne({ _id: new ObjectId(id) });
+        // Use aggregation to fetch post with full comment details
+        const post = await postCollection.aggregate([
+            { $match: { _id: new ObjectId(id) } },
+            {
+                $lookup: {
+                    from: 'comments',
+                    localField: 'comments',
+                    foreignField: '_id',
+                    as: 'comments'
+                }
+            }
+        ]).toArray();
 
-        if (!post) throw 'Error: Post not found';
+        if (!post || post.length === 0) throw 'Error: Post not found';
 
-        return post;
+        return post[0];
     } catch (e) {
         console.error(e);
         throw "Failed getting post by post ID in DB";
@@ -214,6 +225,8 @@ export const updatePost = async (id, updatedPost) => {
         throw "Failed updating post in DB.";
     }
 }
+
+
 
 
 /**
