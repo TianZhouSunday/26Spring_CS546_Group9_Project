@@ -2,15 +2,11 @@
 
 <p>Join the NYC Safety Alert community to report and stay informed about safety incidents in your area.</p>
 
-{{
-#if
- error}}
+{{#if error}}
 <div class="error">
     {{error}}
 </div>
-{{
-/if
-}}
+{{/if}}
 
 <form method="POST" action="/signup" class="auth-form">
     <div class="form-group">
@@ -41,31 +37,11 @@
         <label for="location">Location (Optional):</label>
         <select id="location" name="location">
             <option value="">Select your borough...</option>
-            <option value="Manhattan" {{
-#if
- (equals location "Manhattan")}}selected{{
-/if
-}}>Manhattan</option>
-            <option value="Brooklyn" {{
-#if
- (equals location "Brooklyn")}}selected{{
-/if
-}}>Brooklyn</option>
-            <option value="Queens" {{
-#if
- (equals location "Queens")}}selected{{
-/if
-}}>Queens</option>
-            <option value="Bronx" {{
-#if
- (equals location "Bronx")}}selected{{
-/if
-}}>Bronx</option>
-            <option value="Staten Island" {{
-#if
- (equals location "Staten Island")}}selected{{
-/if
-}}>Staten Island</option>
+            <option value="Manhattan" {{#equals location "Manhattan"}}selected{{/equals}}>Manhattan</option>
+            <option value="Brooklyn" {{#equals location "Brooklyn"}}selected{{/equals}}>Brooklyn</option>
+            <option value="Queens" {{#equals location "Queens"}}selected{{/equals}}>Queens</option>
+            <option value="Bronx" {{#equals location "Bronx"}}selected{{/equals}}>Bronx</option>
+            <option value="Staten Island" {{#equals location "Staten Island"}}selected{{/equals}}>Staten Island</option>
         </select>
     </div>
 

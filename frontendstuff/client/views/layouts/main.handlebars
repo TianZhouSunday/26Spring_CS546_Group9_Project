@@ -1,59 +1,13 @@
 {{! trying to use the lab8 code to help me out here}}
-<article>
-    <h1>{{movie.Title}}</h1>
-    {{#if movie.Poster}}
-        {{#unless (equals movie.Poster "N/A")}}
-            <img alt="{{movie.Title}} Poster" src="{{movie.Poster}}">
-        {{else}}
-            <img alt="No Image Available" src="/public/images/no_image.jpeg">
-        {{/unless}}
-    {{else}}
-        <img alt="No Image Available" src="/public/images/no_image.jpeg">
-    {{/if}}
-    
-    <h2>Plot</h2>
-    <p>{{movie.Plot}}</p>
-    
-    <section>
-        <h3>Info</h3>
-        <dl>
-            <dt>Year Released:</dt>
-            <dd>{{movie.Year}}</dd>
-            <dt>Rated:</dt>
-            <dd>{{movie.Rated}}</dd>
-            <dt>Runtime:</dt>
-            <dd>{{movie.Runtime}}</dd>
-            <dt>Genre(s):</dt>
-            <dd>{{movie.Genre}}</dd>
-            <dt>Box Office Earnings:</dt>
-            <dd>{{movie.BoxOffice}}</dd>
-            <dt>DVD Release Date:</dt>
-            <dd>{{movie.DVD}}</dd>
-        </dl>
-    </section>
-
-    <section>
-        <h4>Cast and Crew</h4>
-        <p><strong>Director:</strong> {{movie.Director}}</p>
-        <p><strong>Writer:</strong> {{movie.Writer}}</p>
-        <p><strong>Cast:</strong> {{movie.Actors}}</p>
-    </section>
-    
-    <section>
-        <h4>Ratings</h4>
-        <table class="my_coolratings_table">
-            <tr>
-                <th>Source</th>
-                <th>Rating</th>
-            </tr>
-            {{#each movie.Ratings}}
-            <tr>
-                <td>{{this.Source}}</td>
-                <td>{{this.Value}}</td>
-            </tr>
-            {{/each}}
-        </table>
-    </section>
-</article>
-
-<a href="/">Search for Another Movie?</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="/src/App.css">
+</head>
+<body>
+{{{body}}}
+</body>
+</html>
