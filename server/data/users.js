@@ -28,7 +28,7 @@ export const createUser = async (username, password, email) => {
   const userCollection = await users();
 
   //confirm password is at least 8 characters and contains a number and capital letter
-  if(!password.match(/[0-9]/) || !password.match(/[A-Z]/) || password.trim().length < 8){
+  if(!password.match(/[0-9]/) || !password.match(/[A-Z]/) || (password.trim()).length < 8){
     throw Error('createUser: Password must be at least 8 characters and contain a capital letter and a number.');
   }
 
@@ -210,7 +210,7 @@ export const changePassword = async (userId, currentPassword, newPassword) => {
 
   // add password strength validation here
   //confirm password is at least 8 characters and contains a number and capital letter
-  if(!newPassword.match(/[0-9]/) || !newPassword.match(/[A-Z]/) || newPassword.trim().length() < 8){
+  if(!newPassword.match(/[0-9]/) || !newPassword.match(/[A-Z]/) || (newPassword.trim()).length < 8){
     throw Error('createUser: Password must be at least 8 characters and contain a capital letter and a number.');
   }
 
