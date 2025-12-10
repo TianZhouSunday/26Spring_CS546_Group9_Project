@@ -53,7 +53,8 @@ export const createPost = async (title, body, photo, location, sensitive, user) 
         post_score: 0,
         user: user,
         comments: [],
-        reports: []
+        reports: [],
+        isHidden: false
     };
 
     try {
@@ -77,7 +78,7 @@ export const createPost = async (title, body, photo, location, sensitive, user) 
 export const getAllPosts = async () => {
     try {
         const postCollection = await posts();
-        return await postCollection.find({}).sort({ date: -1 }).toArray();
+        return await postCollection.find({ isHidden: { $ne: true } }).sort({ date: -1 }).toArray();
     } catch (e) {
         console.error(e);
         throw "Failed getting all posts in DB";
@@ -129,7 +130,7 @@ export const getPostByUser = async (userId) => {
 
     try {
         const postCollection = await posts();
-        const userPosts = await postCollection.find({ user: userId }).sort({ date: -1 }).toArray();
+        const userPosts = await postCollection.find({ user: userId, isHidden: { $ne: true } }).sort({ date: -1 }).toArray();
 
         if (!userPosts) throw 'Error: Posts not found for this user';
 
@@ -146,7 +147,7 @@ export const getPostByUser = async (userId) => {
 export const getPopularPosts = async () => {
     try {
         const postCollection = await posts();
-        return await postCollection.find({}).sort({ post_score: -1 }).toArray();
+        return await postCollection.find({ isHidden: { $ne: true } }).sort({ post_score: -1 }).toArray();
     } catch (e) {
         console.error(e);
         throw "Failed getting popular posts in DB";
@@ -254,5 +255,30 @@ export const deletePost = async (id) => {
     } catch (e) {
         console.error(e);
         throw "Failed deleting post in DB.";
+    }
+}
+
+/**
+ * Hide a post by post ID.
+ * Required field: id.
+ */
+export const hidePost = async (id) => {
+    //check id
+    id = helper.AvailableID(id, "post ID");
+
+    try {
+        const postCollection = await posts();
+        const updateInfo = await postCollection.updateOne(
+            { _id: new ObjectId(id) },
+            { $set: { isHidden: true } }
+        );
+
+        if (updateInfo.matchedCount === 0) throw "No post was found with this ID.";
+
+        console.log(`Post(ID: ${id}) successfully hidden!`);
+        return { hidden: true, postId: id };
+    } catch (e) {
+        console.error(e);
+        throw "Failed hiding post in DB.";
     }
 }
