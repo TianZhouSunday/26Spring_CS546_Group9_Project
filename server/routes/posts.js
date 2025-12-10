@@ -8,6 +8,7 @@ import {
     getPostByUser,
     getPopularPosts
 } from '../data/posts.js';
+import commentData from '../data/comments.js';
 import helper from '../data/helpers.js';
 
 const router = Router();
@@ -215,6 +216,87 @@ router.delete('/:id', async (req, res) => {
         }
         console.error(e);
         res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+
+// POST /:id/comments (Add a comment to a post)
+router.post('/:id/comments', async (req, res) => {
+    let id;
+    // Check validate ID (400 error)
+    try {
+        id = helper.AvailableID(req.params.id, 'postId');
+    } catch (e) {
+        return res.status(400).json({ error: e.toString() });
+    }
+
+    // Check if user is logged in
+    if (!req.session.user) {
+        return res.status(401).json({ error: 'You must be logged in to comment.' });
+    }
+
+    const { text, score } = req.body;
+
+    // Check comment text
+    try {
+        helper.AvailableString(text, 'comment text');
+    } catch (e) {
+        return res.status(400).json({ error: e });
+    }
+
+    // Check score (optional or required? User schema example has it. My createComment implementation requires it)
+    if (score === undefined) {
+        return res.status(400).json({ error: 'Score is required' });
+    }
+
+    try {
+        const newComment = await commentData.createComment(id, req.session.user._id.toString(), text, score);
+        res.status(201).json(newComment);
+    } catch (e) {
+        if (typeof e === 'string' && (e.includes("No post found") || e.includes("not found"))) {
+            return res.status(404).json({ error: e.toString() });
+        }
+        console.error(e);
+        res.status(500).json({ error: e.toString() });
+    }
+});
+
+
+// DELETE /:postId/comments/:commentId (Delete a comment)
+router.delete('/:postId/comments/:commentId', async (req, res) => {
+    let commentId;
+    let postId;
+    try {
+        postId = helper.AvailableID(req.params.postId, 'postId');
+        commentId = helper.AvailableID(req.params.commentId, 'commentId');
+    } catch (e) {
+        return res.status(400).json({ error: e.toString() });
+    }
+
+    // Check if user is logged in
+    if (!req.session.user) {
+        return res.status(401).json({ error: 'You must be logged in to delete a comment.' });
+    }
+
+    try {
+        const comment = await commentData.getCommentById(commentId);
+
+        // Authorization check: User must be the comment owner OR an admin
+        const isOwner = comment.user === req.session.user._id.toString();
+        const isAdmin = req.session.user.role === 'admin';
+
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({ error: 'You do not have permission to delete this comment.' });
+        }
+
+        const result = await commentData.deleteComment(commentId);
+        res.json(result);
+    } catch (e) {
+        if (typeof e === 'string' && e.includes("not found")) {
+            return res.status(404).json({ error: e.toString() });
+        }
+        console.error(e);
+        res.status(500).json({ error: e.toString() });
     }
 });
 
