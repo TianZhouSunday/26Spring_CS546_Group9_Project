@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("../frontendstuff/client/src", express.static("public"));
+app.use("../frontendstuff/src", express.static("public"));
 app.engine('handlebars', exphbs.engine({
   defaultLayout: "main",
   extname: ".handlebars",
@@ -25,7 +25,7 @@ app.engine('handlebars', exphbs.engine({
   }
 }));
 app.set("view engine", "handlebars");
-app.set('views', path.join(__dirname, '../frontendstuff/client/views'));
+app.set('views', path.join(__dirname, '../frontendstuff/views'));
 
 app.use(express.json());
 
