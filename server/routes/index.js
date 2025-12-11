@@ -1,4 +1,4 @@
-import authRoutes from './users.js';
+import authRoutes from './auth_routes.js';
 import postsRoutes from './posts.js';
 import reportsRoutes from './reports.js';
 import testRoute from './test.js';
