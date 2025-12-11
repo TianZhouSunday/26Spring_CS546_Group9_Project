@@ -1,73 +1,73 @@
 import { Router } from 'express';
-import { getUserById } from '../data/users.js';
+import { createUser, checkUser } from '../data/users.js';
 
 const router = Router();
 
-router.get('/:userId', async (req, res) => {
-    try {
-        const user = await getUserById(req.params.userId);
-        return res.render("profile", {title: user.username, user: user});
-    } catch (error) {
-        if(error.message.includes("no user found")){
-            return res.status(404).render("error", {
-                title: "Error",
-                error: "User not found"
-            });
-        }
-        else if(error.message.includes("getUserById")){
-            return res.status(400).render("error", {
-                title: "Error",
-                error: "Bad request"
-            });
-        }
-        else{
-            return res.status(500).render("error", {
-                title: "Error",
-                error: error.message
-            })
-        }
-    }
-})
+router.get('/', async (req, res) => {
+  res.render("home");
+});
 
-router.post("/:blockId/block", async (req, res) => {
-    try {
-        //check if the user is logged in
-        if (!req.session.user) {
-            return res.status(401).render("error", {
-                title: "Unauthorized",
-                error: "You must be logged in to block a user."
-            });
-        }
+//accoutn creation
+router.get('/signup', async (req, res) => {
+  if (req.session.user) {
+    return res.redirect("/profile");
+  }
+  res.render("signup", { title: "Sign Up" });
+});
 
-        const blockId = req.params.blockId;
-        const userId = req.session.user._id.toString();
+//signup submit route 
+router.post('/signup', async (req, res) => {
+  try {
+    const { username, password, email } = req.body;
+    const user = await createUser(username, password, email);
+    req.session.user = user;
+    return res.redirect("/profile");
+  } catch (e) {
+    return res.status(400).render("signup", {
+      title: "Sign Up",
+      error: e.message
+    });
+  }
+});
 
-        const updatedUser = await blockUser(blockId, userId);
+//login
+router.get('/login', async (req, res) => {
+  if (req.session.user) {
+    return res.redirect("/profile");
+  }
+  res.render("login", { title: "Login" });
+});
 
-        // redirect to user profile
-        return res.redirect(`/users/${userId}`);
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await checkUser(email, password);
+    req.session.user = user;
+    return res.redirect("/profile");
+  } catch (e) {
+    return res.status(400).render("login", {
+      title: "Login",
+      error: e.message
+    });
+  }
+});
 
+//logout
+router.get('/logout', (req, res) => {
+  req.session.destroy(() => {
+    return res.redirect('/login');
+  });
+});
 
-    } catch (error) {
-        if (error.message.includes("one or more users not found")) {
-            return res.status(404).render("error", {
-                title: "Error",
-                error: "User not found"
-            });
-        }
-
-        if (error.message.includes("blockUser")) {
-            return res.status(400).render("error", {
-                title: "Error",
-                error: "Bad request"
-            });
-        }
-
-        return res.status(500).render("error", {
-            title: "Server Error",
-            error: error.message
-        });
-    }
+//profile
+router.get('/profile', (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+  res.render("profile", {
+    title: "Your Profile",
+    user: req.session.user
+  });
 });
 
 export default router;
