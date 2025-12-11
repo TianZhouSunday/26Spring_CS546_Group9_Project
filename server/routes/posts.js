@@ -163,6 +163,39 @@ router.patch('/:id', async (req, res) => {
     }
 });
 
+// PATCH /:id/sensitive (Admin toggle sensitive status)
+router.patch('/:id/sensitive', async (req, res) => {
+    let id;
+    try {
+        id = helper.AvailableID(req.params.id, 'postId');
+    } catch (e) {
+        return res.status(400).json({ error: e.toString() });
+    }
+
+    if (!req.session.user) {
+        return res.status(401).json({ error: 'You must be logged in.' });
+    }
+
+    // Check if admin
+    if (req.session.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Access denied. Admins only.' });
+    }
+
+    try {
+        const post = await getPostById(id);
+        const newSensitiveStatus = !post.sensitive;
+
+        const updatedPost = await updatePost(id, { sensitive: newSensitiveStatus });
+        res.json({ sensitive: updatedPost.sensitive, postId: id });
+    } catch (e) {
+        if (typeof e === 'string' && e.includes("No post found")) {
+            return res.status(404).json({ error: e.toString() });
+        }
+        console.error(e);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
 // DELETE /:id (Delete post)
 router.delete('/:id', async (req, res) => {
     let id;
