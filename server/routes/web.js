@@ -91,6 +91,18 @@ router.route('/logout').post(async (req, res) => {
   res.redirect('/');
 });
 
+// map page - NEW ROUTE
+router.route('/map').get(async (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+  
+  res.render('map', {
+    title: 'NYC Safety Map',
+    user: req.session.user
+  });
+});
+
 // all posts page
 router.route('/posts').get(async (req, res) => {
   if (!req.session.user) {
@@ -151,6 +163,8 @@ router.route('/posts').post(async (req, res) => {
   
   try {
     await createPost(title, body, photo, location, isSensitive, userId);
+    // Redirect logic: if created from map (which typically might be referred), 
+    // we could check referer, but for now redirecting to posts list is standard behavior in this app
     res.redirect('/posts');
   } catch (error) {
     let postList = await getAllPosts();

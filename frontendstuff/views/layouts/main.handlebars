@@ -10,12 +10,35 @@
 <body>
     <header>
         <nav>
-            <div class="nav-branding"></div>
-                <a href="/">NYC Danger Map: Stay alert with your community</a></li>
+            <div class="nav-branding">
+                <a href="/">NYC Danger Map: Stay alert with your community</a>
             </div>
             <ul class="nav-links">
+                {{!-- Check if user exists (implies logged in based on router logic) --}}
+                {{!-- Since handlebars variables passed depend on route, we assume 'user' is passed if logged in --}}
+                {{!-- Alternatively, rely on the fact that protected routes redirect to login if no session --}}
+                
+                <li><a href="/map">Safety Map</a></li>
+                <li><a href="/posts">All Posts</a></li>
+                <li><a href="/profile">Profile</a></li>
+                
+                {{!-- Assuming a logout button form or link is handled here. 
+                     Since we don't have a specific 'user' object in all render calls in the original code,
+                     we'll keep it simple or you can wrap this in an {{#if user}} block if you pass user object to all views.
+                --}}
+                <li>
+                    <form action="/logout" method="POST" class="inline-form">
+                        <button type="submit" class="link-button">Logout</button>
+                    </form>
+                </li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        {{{body}}}
+    </main>
     <footer>
         <p>CS 546 Group 9 Final Project: NYC Danger Map: Community Safety Reporting </p>
-        </footer>
+    </footer>
 </body>
 </html>
