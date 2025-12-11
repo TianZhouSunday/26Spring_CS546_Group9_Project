@@ -3,6 +3,10 @@ import { createUser, checkUser } from '../data/users.js';
 
 const router = Router();
 
+router.get('/', async (req, res) => {
+  res.render("home");
+});
+
 //accoutn creation
 router.get('/signup', async (req, res) => {
   if (req.session.user) {
