@@ -6,7 +6,7 @@ import { ObjectId } from "mongodb";
 const SALT_ROUNDS = 16;
 
 const checkString = (str) => {
-		return (typeof(str) === "string" && str.trim().length > 0);
+  return (typeof (str) === "string" && str.trim().length > 0);
 }
 
 /**
@@ -14,21 +14,21 @@ const checkString = (str) => {
  * Required fields: username, password, email.
  * Initialize all other fields in the schema
  */
-export const createUser = async (username, password, email) => {
+export const createUser = async (username, password, email, hideSensitiveContent = false) => {
   //validate input
-	if(!checkString(username) || !checkString(password) || !checkString(email)){
+  if (!checkString(username) || !checkString(password) || !checkString(email)) {
     throw Error('createUser: Must provide a valid username, password, and email.');
   }
   username = username.trim().toLowerCase();
   email = email.trim().toLowerCase();
 
-  if(!isEmail(email)){
+  if (!isEmail(email)) {
     throw Error('createUser: Must provide a valid email address.');
   }
   const userCollection = await users();
 
   //confirm password is at least 8 characters and contains a number and capital letter
-  if(!password.match(/[0-9]/) || !password.match(/[A-Z]/) || password.trim().length < 8){
+  if (!password.match(/[0-9]/) || !password.match(/[A-Z]/) || (password.trim()).length < 8) {
     throw Error('createUser: Password must be at least 8 characters and contain a capital letter and a number.');
   }
 
@@ -60,13 +60,17 @@ export const createUser = async (username, password, email) => {
     posts: [],
     comments: [],
     blocked_users: [],
-    reports: []
+    reports: [],
+    reports: [],
+    hideSensitiveContent: hideSensitiveContent,
+    role: "user"
   };
 
   const insertInfo = await userCollection.insertOne(newUser);
   if (!insertInfo.acknowledged) throw Error('createUser: Could not add user');
 
-  return { registrationCompleted: true };
+  newUser._id = insertInfo.insertedId;
+  return newUser;
 };
 
 /**
@@ -74,7 +78,7 @@ export const createUser = async (username, password, email) => {
  */
 export const checkUser = async (email, password) => {
   //validate input
-	if(!checkString(email) || !checkString(password)){
+  if (!checkString(email) || !checkString(password)) {
     throw Error('checkUser: must provide valid email and password.');
   }
   email = email.trim().toLowerCase();
@@ -100,11 +104,14 @@ export const checkUser = async (email, password) => {
     posts: user.posts,
     comments: user.comments,
     blocked_users: user.blocked_users,
-    reports: user.reports
+    reports: user.reports,
+    hideSensitiveContent: user.hideSensitiveContent || false,
+    role: user.role || "user"
   };
 };
 
 export const updateUser = async (
+  userId,
   username,
   phone_number,
   email,
@@ -112,9 +119,10 @@ export const updateUser = async (
   home_address,
   location,
   profile_picture,
+  hideSensitiveContent
 ) => {
   //validate input
-	if(!checkString(userId) || !checkString(username) || !checkString(email)){
+  if (!checkString(userId) || !checkString(username) || !checkString(email)) {
     throw Error('updateUser: Must provide a valid Id, username and email.');
   }
   const userCollection = await users();
@@ -127,7 +135,7 @@ export const updateUser = async (
   username = username.trim().toLowerCase();
   email = email.trim().toLowerCase();
 
-  if(!isEmail(email)){
+  if (!isEmail(email)) {
     throw Error('updateUser: Must provide a valid email address.');
   }
 
@@ -170,6 +178,10 @@ export const updateUser = async (
     throw Error("updateUser: profile_picture must be a string URL or null");
   }
 
+  if (hideSensitiveContent !== undefined && hideSensitiveContent !== null && typeof hideSensitiveContent !== "boolean") {
+    throw Error("updateUser: hideSensitiveContent must be a boolean");
+  }
+
   const updatedUser = {
     username,
     phone_number,
@@ -179,6 +191,10 @@ export const updateUser = async (
     location,
     profile_picture
   };
+
+  if (hideSensitiveContent !== undefined && hideSensitiveContent !== null) {
+    updatedUser.hideSensitiveContent = hideSensitiveContent;
+  }
 
   //perform update
   const updateRes = await userCollection.updateOne(
@@ -210,7 +226,7 @@ export const changePassword = async (userId, currentPassword, newPassword) => {
 
   // add password strength validation here
   //confirm password is at least 8 characters and contains a number and capital letter
-  if(!newPassword.match(/[0-9]/) || !newPassword.match(/[A-Z]/) || newPassword.trim().length < 8){
+  if (!newPassword.match(/[0-9]/) || !newPassword.match(/[A-Z]/) || (newPassword.trim()).length < 8) {
     throw Error('createUser: Password must be at least 8 characters and contain a capital letter and a number.');
   }
 

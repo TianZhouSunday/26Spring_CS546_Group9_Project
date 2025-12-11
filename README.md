@@ -24,24 +24,15 @@ git clone https://github.com/TianZhouSunday/26Spring_CS546_Group9_Project.git
 cd 26Spring_CS546_Group9_Project
 ```
 
-**2. Server Setup (Backend):**
-Navigate to the server directory, install dependencies, and start the server.
+**2. Setup and Run:**
+Navigate to the server directory, install dependencies, and start the application.
+
 ```bash
 cd server
 npm install
 npm start
 ```
-*The server will run on [http://localhost:3000](http://localhost:3000) (or the port defined in `app.js`).*
+*The application will be accessible at [http://localhost:3000](http://localhost:3000).*
 
-**3. Client Setup (Frontend):**
-Open a new terminal, navigate to the client directory, install dependencies, and start the React application.
-```bash
-cd frontendstuff/client
-npm install
-npm start
-```
-*The client should launch in your browser at [http://localhost:3000](http://localhost:3000).*
-> **Note**: If both the server and client try to run on port 3000, you may be prompted to run the React client on a different port (e.g., 3001). Accept this prompt or modify the start script/env to specify a port.
-
-**4. Database Configuration:**
+**3. Database Configuration:**
 The application connects to a MongoDB database named `nyc_danger_map`. Ensure your MongoDB service is running before starting the server. Configuration can be found in `server/config/settings.js`.
