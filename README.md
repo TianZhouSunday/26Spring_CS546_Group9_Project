@@ -13,6 +13,8 @@ Our team talked about different datasets and different approaches we wanted to t
 This will serve as a forum where all users can log in and log different concerns and happenings within different locations in New York City. The main goal of this project is to be informative and spread awareness about different spots in the city and help the community stay alert with a user-friendly UI.
 
 Our site also aims to show the frequency of the crimes in the area for different areas based on user input. This will allow for more accurate results and general areas to look out for when users are planning out their routes for their journeys. 
+
+Our data source is the NYPD Crime Data from 2020-2024: https://data.cityofnewyork.us/Public-Safety/NYPD-Shooting-Incident-Data-Historic-/833y-fsy8/about_data. (api link: https://data.cityofnewyork.us/api/v3/views/833y-fsy8/query.json)
 ### How to Run:
 **Prerequisites**:
 *   Node.js (v14 or higher recommended)
