@@ -1,10 +1,14 @@
 // app.js
 import express from 'express';
+import exphbs from 'express-handlebars';
 import session from 'express-session';
 import { dbConnection } from './config/mongoConnection.js';
 import constructorMethod from './routes/index.js';
 
 const app = express();
+
+app.engine('handlebars', exphbs.engine({defaultLayout: 'main'}));
+app.set('view engine', 'handlebars');
 
 app.use(express.json());
 
