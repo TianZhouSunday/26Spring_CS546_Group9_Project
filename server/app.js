@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("../frontendstuff/src", express.static("public"));
+app.use("/src", express.static(path.join(__dirname, "../frontendstuff/src")));
 app.engine('handlebars', exphbs.engine({
   defaultLayout: "main",
   extname: ".handlebars",
