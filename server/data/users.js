@@ -236,3 +236,59 @@ export const changePassword = async (userId, currentPassword, newPassword) => {
 
   return { passwordChanged: true };
 };
+
+export const getUserById = async (id) => {
+  if(!checkString(id)){
+    throw Error("getUserById: input must be a nonempty string.");
+  }
+  id = id.trim();
+  if(!ObjectId.isValid(id)){
+    throw Error("getUserById: input must be a valid object ID.");
+  }
+
+  //connect to database and find corresponding user
+  const userCollection = await users();
+  let user = await userCollection.findOne({ _id: ObjectId.createFromHexString(id) });
+
+  //throw if not found
+  if(!user) {
+    throw Error("getUserById: no user found with id " + id);
+  }
+  user._id = user._id.toString();
+  return movie;
+}
+
+export const blockUser = async (block_id, user_id) => {
+  if(!checkString(block_id) || !checkString(user_id)){
+    throw Error("blockUser: inputs must be nonempty strings.");
+  }
+  block_id = block_id.trim();
+  user_id = user_id.trim();
+  if(!ObjectId.isValid(block_id) || !ObjectId.isValid(user_id)){
+    throw Error("blockUser: inputs must be valid object IDs.");
+  }
+
+  //connect to database and find corresponding users
+  const userCollection = await users();
+  let user = await userCollection.findOne({ _id: ObjectId.createFromHexString(user_id) });
+  let block_user = await userCollection.findOne({ _id: ObjectId.createFromHexString(block_id) });
+  //throw if either user not found
+  if(!user || !block_user) {
+    throw Error("blockUser: one or more users not found");
+  }
+
+  //update the database
+  let updatedInfo = await userCollection.findOneAndUpdate(
+    { _id: ObjectId.createFromHexString(user_id) },
+    { $push: { blocked_users: block_id } },
+    { returnDocument: "after" }
+  );
+
+  //convert id to a string
+  updatedInfo._id = updatedInfo._id.toString();
+  return updatedInfo;
+}
+
+export const deleteUser = async (userId) => {
+
+}

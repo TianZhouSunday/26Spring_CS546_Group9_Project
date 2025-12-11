@@ -44,13 +44,13 @@ app.use(session({
 //middlware for redirecting users to/from signin pages
 function loginRedirect(req, res, next) {
   if (req.session.user) {
-    return res.redirect("/");
+    return res.redirect("/profile");
   }
   next();
 }
 function registerRedirect(req, res, next) {
   if (req.session.user) {
-    return res.redirect("/");
+    return res.redirect("/profile");
   }
   next();
 }
