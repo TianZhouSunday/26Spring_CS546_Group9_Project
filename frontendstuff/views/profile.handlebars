@@ -1,5 +1,16 @@
 <div class="profile-container">
     <h1>{{user.username}}'s Profile</h1>
+
+    {{#if user.profile_picture}}
+        <img class="profile-photo"
+                alt="{{user.username}} Profile Photo"
+                src="{{user.profile_picture}}">
+    {{else}}
+        <img class="profile-photo"
+                alt="No profile photo available for {{user.username}}"
+                src="/public/Default_pfp.svg">
+    {{/if}}
+
     <p>Email: {{user.email}}</p>
 
     <div class="settings-section">
