@@ -6,7 +6,9 @@ import {
     updatePost,
     deletePost,
     getPostByUser,
-    getPopularPosts
+    getPopularPosts,
+    getPostsByLocation,
+    ratePost
 } from '../data/posts.js';
 import commentData from '../data/comments.js';
 import helper from '../data/helpers.js';
@@ -16,6 +18,21 @@ const router = Router();
 // GET / (Get all posts)
 router.get('/', async (req, res) => {
     try {
+        const { latitude, longitude, radius } = req.query;
+        
+        if (latitude && longitude) {
+            const lat = parseFloat(latitude);
+            const lon = parseFloat(longitude);
+            const rad = radius ? parseFloat(radius) : 0.01;
+            
+            if (isNaN(lat) || isNaN(lon)) {
+                return res.status(400).json({ error: "Latitude and longitude must be valid numbers" });
+            }
+            
+            const postList = await getPostsByLocation(lat, lon, rad);
+            return res.json(postList);
+        }
+        
         const postList = await getAllPosts();
         res.json(postList);
     } catch (e) {
@@ -59,22 +76,68 @@ router.get('/user/:userId', async (req, res) => {
     }
 });
 
-// GET /:id (Get a single post)
+router.get('/:id/comments', async (req, res) => {
+    let id;
+    try {
+        id = helper.AvailableID(req.params.id, 'postId');
+    } catch (e) {
+        return res.status(400).json({ error: e.toString() });
+    }
+    
+    try {
+        const commentList = await commentData.getAllComments(id);
+        res.json(commentList);
+    } catch (e) {
+        if (typeof e === 'string' && e.includes("not found")) {
+            return res.status(404).json({ error: e.toString() });
+        }
+        console.error(e);
+        res.status(500).json({ error: e.toString() });
+    }
+});
+
+router.post('/:id/rate', async (req, res) => {
+    let id;
+    try {
+        id = helper.AvailableID(req.params.id, 'postId');
+    } catch (e) {
+        return res.status(400).json({ error: e.toString() });
+    }
+    
+    if (!req.session.user) {
+        return res.status(401).json({ error: 'You must be logged in to rate a post.' });
+    }
+    
+    const { rating } = req.body;
+    
+    if (rating === undefined || rating === null) {
+        return res.status(400).json({ error: 'Rating is required' });
+    }
+    
+    try {
+        const result = await ratePost(id, req.session.user._id.toString(), rating);
+        res.json(result);
+    } catch (e) {
+        if (typeof e === 'string' && e.includes("not found")) {
+            return res.status(404).json({ error: e.toString() });
+        }
+        console.error(e);
+        res.status(500).json({ error: e.toString() });
+    }
+});
+
 router.get('/:id', async (req, res) => {
     let id;
-    // Check validate ID format
     try {
         id = helper.AvailableID(req.params.id, 'postId');
     } catch (e) {
         return res.status(400).json({ error: e.toString() });
     }
 
-    // Try to fetch from database
     try {
         const post = await getPostById(id);
         res.json(post);
     } catch (e) {
-        // Error classification
         if (typeof e === 'string' && e.includes("No post found")) {
             return res.status(404).json({ error: e.toString() });
         }
@@ -249,7 +312,6 @@ router.delete('/:id', async (req, res) => {
 });
 
 
-// POST /:id/comments (Add a comment to a post)
 router.post('/:id/comments', async (req, res) => {
     let id;
     // Check validate ID (400 error)

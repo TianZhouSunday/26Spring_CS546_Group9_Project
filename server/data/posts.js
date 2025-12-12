@@ -54,6 +54,7 @@ export const createPost = async (title, body, photo, location, sensitive, user) 
         user: user,
         comments: [],
         reports: [],
+        ratings: [],
         isHidden: false
     };
 
@@ -82,6 +83,28 @@ export const getAllPosts = async () => {
     } catch (e) {
         console.error(e);
         throw "Failed getting all posts in DB";
+    }
+}
+//location filtering
+export const getPostsByLocation = async (latitude, longitude, radius = 0.01) => {
+    if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+        throw "Latitude and longitude must be numbers";
+    }
+    if (latitude < 40.496 || latitude > 40.916 || longitude < -74.258 || longitude > -73.699) {
+        throw "Location must be in NYC";
+    }
+    
+    try {
+        const postCollection = await posts();
+        const postsList = await postCollection.find({
+            isHidden: { $ne: true },
+            'location.latitude': { $gte: latitude - radius, $lte: latitude + radius },
+            'location.longitude': { $gte: longitude - radius, $lte: longitude + radius }
+        }).sort({ date: -1 }).toArray();
+        return postsList;
+    } catch (e) {
+        console.error(e);
+        throw "Failed getting posts by location in DB";
     }
 }
 
@@ -280,5 +303,49 @@ export const hidePost = async (id) => {
     } catch (e) {
         console.error(e);
         throw "Failed hiding post in DB.";
+    }
+}
+//post rating
+export const ratePost = async (postId, userId, rating) => {
+    postId = helper.AvailableID(postId, "post ID");
+    userId = helper.AvailableID(userId, "user ID");
+    
+    if (typeof rating !== 'number' || rating < 1 || rating > 5) {
+        throw "Rating must be a number between 1 and 5";
+    }
+    
+    try {
+        const postCollection = await posts();
+        const post = await postCollection.findOne({ _id: new ObjectId(postId) });
+        if (!post) throw "Post not found";
+        
+        const existingRating = post.ratings.find(r => r.user.toString() === userId);
+        
+        if (existingRating) {
+            await postCollection.updateOne(
+                { _id: new ObjectId(postId), 'ratings.user': new ObjectId(userId) },
+                { $set: { 'ratings.$.rating': rating } }
+            );
+        } else {
+            await postCollection.updateOne(
+                { _id: new ObjectId(postId) },
+                { $push: { ratings: { user: new ObjectId(userId), rating: rating } } }
+            );
+        }
+        
+        const updatedPost = await postCollection.findOne({ _id: new ObjectId(postId) });
+        const avgRating = updatedPost.ratings && updatedPost.ratings.length > 0 
+            ? updatedPost.ratings.reduce((sum, r) => sum + r.rating, 0) / updatedPost.ratings.length 
+            : 0;
+        
+        await postCollection.updateOne(
+            { _id: new ObjectId(postId) },
+            { $set: { post_score: avgRating } }
+        );
+        
+        return { rating: rating, averageRating: avgRating };
+    } catch (e) {
+        console.error(e);
+        throw "Failed rating post in DB";
     }
 }
