@@ -66,18 +66,17 @@
             <h2>Comments ({{comments.length}})</h2>
 
             {{#each comments}}
-            <div class="comment">
+            <div class="comment" id="comment-{{this._id}}">
                 <p class="comment-text">{{this.text}}</p>
                 <p class="comment-meta">Score: {{this.score}}</p>
 
-                {{#if (eq this.user ../currentUser._id)}}
-                <form method="POST" action="/comments/{{this._id}}/delete" class="inline-form">
-                    <input type="hidden" name="postId" value="{{../post._id}}">
-                    <button type="submit" class="button-danger"
-                        onclick="return confirm('Are you sure you want to delete this comment?')">
-                        Delete
-                    </button>
-                </form>
+                {{#if (eq this.user ../currentUser._id.toString)}}
+                <button type="button" class="button-danger delete-comment-btn" 
+                    data-comment-id="{{this._id}}" 
+                    data-post-id="{{../post._id}}"
+                    onclick="if(confirm('Are you sure you want to delete this comment?')) deleteComment('{{this._id}}', '{{../post._id}}')">
+                    Delete
+                </button>
                 {{/if}}
             </div>
             {{/each}}
@@ -95,3 +94,33 @@
         </div>
     </article>
 </div>
+
+<script>
+function deleteComment(commentId, postId) {
+    fetch(`/api/posts/${postId}/comments/${commentId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+    })
+    .then(response => {
+        if (response.ok) {
+            const commentElement = document.getElementById(`comment-${commentId}`);
+            if (commentElement) {
+                commentElement.remove();
+                const commentsSection = document.querySelector('.comments-section h2');
+                if (commentsSection) {
+                    const currentCount = parseInt(commentsSection.textContent.match(/\d+/)[0]);
+                    commentsSection.textContent = `Comments (${currentCount - 1})`;
+                }
+            }
+        } else {
+            return response.json().then(data => {
+                alert('Error: ' + (data.error || 'Failed to delete comment'));
+            });
+        }
+    })
+    .catch(err => {
+        alert('Error deleting comment: ' + err.message);
+        console.error(err);
+    });
+}
+</script>
