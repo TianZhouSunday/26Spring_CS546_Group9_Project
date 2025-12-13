@@ -242,19 +242,151 @@
                         const lng = post.location.longitude;
                         communityHeatData.push([lat, lng, 0.5]);
 
-                        const sensitiveWarning = post.sensitive ? '<p style="color:red;font-weight:bold;">⚠️ Sensitive Content</p>' : '';
-                        const popupContent = `
-                            <div class="post-preview">
-                                <h3>${post.title}</h3>
+                        const postId = post._id;
+                        const marker = L.marker([post.location.latitude, post.location.longitude], { icon: blueIcon });
+                        
+                        const loadCommentsAndUpdatePopup = function() {
+                            fetch(`/api/posts/${postId}/comments`)
+                                .then(response => response.json())
+                                .then(comments => {
+                                    let commentsHtml = '';
+                                    if (comments.length > 0) {
+                                        commentsHtml = '<div style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;"><strong>Comments:</strong><ul style="margin:5px 0; padding-left:20px; max-height:100px; overflow-y:auto; font-size:12px;">';
+                                        comments.forEach(comment => {
+                                            commentsHtml += `<li style="margin-bottom:3px;">${comment.text} <small>(Score: ${comment.score})</small></li>`;
+                                        });
+                                        commentsHtml += '</ul></div>';
+                                    } else {
+                                        commentsHtml = '<div style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;"><p style="font-style:italic; color:#666; font-size:12px;">No comments yet</p></div>';
+                                    }
+                                    
+                                    const sensitiveWarning = post.sensitive ? '<p style="color:red;font-weight:bold; font-size:12px;">⚠️ Sensitive Content</p>' : '';
+                                    const commentForm = `
+                                        <div style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;">
+                                            <strong style="font-size:12px;">Add Comment:</strong>
+                                            <form id="comment-form-${postId}" style="margin-top:5px;">
+                                                <textarea name="text" rows="2" placeholder="Write your comment..." required style="width:100%; padding:5px; box-sizing:border-box; font-size:11px;"></textarea>
+                                                <input type="number" name="score" min="0" max="5" value="3" required style="width:100%; padding:5px; margin-top:5px; box-sizing:border-box; font-size:11px;" placeholder="Score (0-5)">
+                                                <button type="submit" style="width:100%; margin-top:5px; padding:5px; background:#2b82cb; color:white; border:none; cursor:pointer; font-size:11px;">Post Comment</button>
+                                            </form>
+                                        </div>
+                                    `;
+                                    
+                                    const fullContent = `
+                                        <div class="post-preview" style="max-width:300px;">
+                                            <h3 style="margin:0 0 10px 0; font-size:16px;">${post.title}</h3>
+                                            ${sensitiveWarning}
+                                            <p style="margin:5px 0; font-size:13px;">${post.body || ''}</p>
+                                            <p style="margin:5px 0; font-size:11px; color:#666;"><small>Date: ${new Date(post.date).toLocaleDateString()}</small></p>
+                                            ${commentsHtml}
+                                            ${commentForm}
+                                            <a href="/posts/${postId}" style="display:block; margin-top:10px; text-align:center; font-size:12px;">View Full Details</a>
+                                        </div>
+                                    `;
+                                    
+                                    marker.setPopupContent(fullContent);
+                                    
+                                    setTimeout(() => {
+                                        const form = document.getElementById(`comment-form-${postId}`);
+                                        if (form) {
+                                            form.addEventListener('submit', function(e) {
+                                                e.preventDefault();
+                                                const formData = new FormData(e.target);
+                                                const text = formData.get('text');
+                                                const scoreStr = formData.get('score');
+                                                const score = parseInt(scoreStr);
+                                                
+                                                if (!text || text.trim().length === 0) {
+                                                    alert('Please enter a comment');
+                                                    return;
+                                                }
+                                                
+                                                if (isNaN(score) || score < 0 || score > 5) {
+                                                    alert('Please enter a valid score between 0 and 5');
+                                                    return;
+                                                }
+                                                
+                                                const commentUrl = `/api/posts/${postId}/comments`;
+                                                console.log('Posting comment to:', commentUrl);
+                                                console.log('Comment data:', { text: text.trim(), score: score });
+                                                
+                                                fetch(commentUrl, {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type': 'application/json'
+                                                    },
+                                                    credentials: 'include',
+                                                    body: JSON.stringify({
+                                                        text: text.trim(),
+                                                        score: score
+                                                    })
+                                                })
+                                                .then(response => {
+                                                    console.log('Comment response status:', response.status);
+                                                    console.log('Comment response URL:', response.url);
+                                                    console.log('Comment response headers:', response.headers.get('content-type'));
+                                                    
+                                                    if (response.ok) {
+                                                        return response.json().then(data => {
+                                                            loadCommentsAndUpdatePopup();
+                                                        });
+                                                    } else {
+                                                        const contentType = response.headers.get('content-type');
+                                                        if (contentType && contentType.includes('application/json')) {
+                                                            return response.json().then(data => {
+                                                                alert('Error: ' + (data.error || 'Failed to post comment. Please make sure you are logged in.'));
+                                                            }).catch(() => {
+                                                                alert('Error: Failed to post comment. Please make sure you are logged in.');
+                                                            });
+                                                        } else {
+                                                            return response.text().then(text => {
+                                                                console.error('Non-JSON response:', text.substring(0, 200));
+                                                                alert('Error: Server returned non-JSON response. Status: ' + response.status + '. Please check console for details.');
+                                                            });
+                                                        }
+                                                    }
+                                                })
+                                                .catch(err => {
+                                                    alert('Error posting comment: ' + err.message);
+                                                    console.error('Comment error:', err);
+                                                });
+                                            });
+                                        }
+                                    }, 100);
+                                })
+                                .catch(err => {
+                                    console.error("Error loading comments:", err);
+                                    const errorContent = `
+                                        <div class="post-preview">
+                                            <h3>${post.title}</h3>
+                                            ${sensitiveWarning}
+                                            <p>${post.body || ''}</p>
+                                            <p><small>Date: ${new Date(post.date).toLocaleDateString()}</small></p>
+                                            <p style="color:red; font-size:12px;">Error loading comments</p>
+                                            <a href="/posts/${postId}">View Details</a>
+                                        </div>
+                                    `;
+                                    marker.setPopupContent(errorContent);
+                                });
+                        };
+                        
+                        marker.on('popupopen', function() {
+                            loadCommentsAndUpdatePopup();
+                        });
+                        
+                        const sensitiveWarning = post.sensitive ? '<p style="color:red;font-weight:bold; font-size:12px;">⚠️ Sensitive Content</p>' : '';
+                        const initialContent = `
+                            <div class="post-preview" style="max-width:300px;">
+                                <h3 style="margin:0 0 10px 0; font-size:16px;">${post.title}</h3>
                                 ${sensitiveWarning}
-                                <p>${post.body || ''}</p>
-                                <p><small>Date: ${new Date(post.date).toLocaleDateString()}</small></p>
-                                <a href="/posts/${post._id}">View Details</a>
+                                <p style="margin:5px 0; font-size:13px;">${post.body || ''}</p>
+                                <p style="margin:5px 0; font-size:11px; color:#666;"><small>Date: ${new Date(post.date).toLocaleDateString()}</small></p>
+                                <p style="font-style:italic; color:#666; font-size:12px; margin-top:10px;">Loading comments...</p>
+                                <a href="/posts/${postId}" style="display:block; margin-top:10px; text-align:center; font-size:12px;">View Details</a>
                             </div>
                         `;
-                        L.marker([post.location.latitude, post.location.longitude], { icon: blueIcon })
-                            .bindPopup(popupContent)
-                            .addTo(communityMarkers);
+                        
+                        marker.bindPopup(initialContent, {maxWidth: 350}).addTo(communityMarkers);
                     }
                 });
                 updateHeatmap();
@@ -275,19 +407,299 @@
 
                         nycHeatData.push([lat, lng, 1.0]);
 
-                        const popupContent = `
-                            <div class="incident-preview">
-                                <h3 style="color: #d32f2f;">NYC Shooting Incident</h3>
-                                <p><strong>Date:</strong> ${incident.occur_date}</p>
-                                <p><strong>Time:</strong> ${incident.occur_time}</p>
-                                <p><strong>Boro:</strong> ${incident.boro}</p>
-                                <p><strong>Location:</strong> ${incident.location_desc || 'Street'}</p>
-                                <p><small>Source: NYC Open Data</small></p>
+                        const incidentId = incident.incident_key || `${incident.occur_date}-${lat}-${lng}`;
+                        const marker = L.marker([incident.latitude, incident.longitude], { icon: redIcon });
+                        
+                        const loadDiscussionPost = function() {
+                            fetch(`/api/posts?latitude=${lat}&longitude=${lng}&radius=0.001`)
+                                .then(response => response.json())
+                                .then(posts => {
+                                    const discussionPost = posts.find(p => 
+                                        p.title && p.title.includes('NYC Shooting Incident') &&
+                                        Math.abs(p.location.latitude - lat) < 0.0001 &&
+                                        Math.abs(p.location.longitude - lng) < 0.0001
+                                    );
+                                    
+                                    let discussionHtml = '';
+                                    if (discussionPost) {
+                                        fetch(`/api/posts/${discussionPost._id}/comments`)
+                                            .then(response => response.json())
+                                            .then(comments => {
+                                                let commentsHtml = '';
+                                                if (comments.length > 0) {
+                                                    commentsHtml = '<div style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;"><strong>Comments:</strong><ul style="margin:5px 0; padding-left:20px; max-height:100px; overflow-y:auto; font-size:12px;">';
+                                                    comments.forEach(comment => {
+                                                        commentsHtml += `<li style="margin-bottom:3px;">${comment.text} <small>(Score: ${comment.score})</small></li>`;
+                                                    });
+                                                    commentsHtml += '</ul></div>';
+                                                } else {
+                                                    commentsHtml = '<div style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;"><p style="font-style:italic; color:#666; font-size:12px;">No comments yet</p></div>';
+                                                }
+                                                
+                                                const commentForm = `
+                                                    <div style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;">
+                                                        <strong style="font-size:12px;">Add Comment:</strong>
+                                                        <form id="comment-form-${discussionPost._id}" style="margin-top:5px;">
+                                                            <textarea name="text" rows="2" placeholder="Write your comment..." required style="width:100%; padding:5px; box-sizing:border-box; font-size:11px;"></textarea>
+                                                            <input type="number" name="score" min="0" max="5" value="3" required style="width:100%; padding:5px; margin-top:5px; box-sizing:border-box; font-size:11px;" placeholder="Score (0-5)">
+                                                            <button type="submit" style="width:100%; margin-top:5px; padding:5px; background:#cb2b3e; color:white; border:none; cursor:pointer; font-size:11px;">Post Comment</button>
+                                                        </form>
+                                                    </div>
+                                                `;
+                                                
+                                                const fullContent = `
+                                                    <div class="incident-preview" style="max-width:300px;">
+                                                        <h3 style="color: #d32f2f; margin:0 0 10px 0; font-size:16px;">NYC Shooting Incident</h3>
+                                                        <p style="margin:3px 0; font-size:12px;"><strong>Date:</strong> ${incident.occur_date}</p>
+                                                        <p style="margin:3px 0; font-size:12px;"><strong>Time:</strong> ${incident.occur_time}</p>
+                                                        <p style="margin:3px 0; font-size:12px;"><strong>Boro:</strong> ${incident.boro}</p>
+                                                        <p style="margin:3px 0; font-size:12px;"><strong>Location:</strong> ${incident.location_desc || 'Street'}</p>
+                                                        <p style="margin:5px 0; font-size:10px; color:#666;"><small>Source: NYC Open Data</small></p>
+                                                        <div style="margin-top:10px; padding-top:10px; border-top:1px solid #ccc;">
+                                                            <p style="font-size:12px; margin:5px 0;"><strong>Community Discussion:</strong></p>
+                                                            <a href="/posts/${discussionPost._id}" style="font-size:11px; color:#2b82cb;">View Full Discussion</a>
+                                                        </div>
+                                                        ${commentsHtml}
+                                                        ${commentForm}
+                                                    </div>
+                                                `;
+                                                
+                                                marker.setPopupContent(fullContent);
+                                                
+                                                setTimeout(() => {
+                                                    const form = document.getElementById(`comment-form-${discussionPost._id}`);
+                                                    if (form) {
+                                                        form.addEventListener('submit', function(e) {
+                                                            e.preventDefault();
+                                                            const formData = new FormData(e.target);
+                                                            const text = formData.get('text');
+                                                            const scoreStr = formData.get('score');
+                                                            const score = parseInt(scoreStr);
+                                                            
+                                                            if (!text || text.trim().length === 0) {
+                                                                alert('Please enter a comment');
+                                                                return;
+                                                            }
+                                                            
+                                                            if (isNaN(score) || score < 0 || score > 5) {
+                                                                alert('Please enter a valid score between 0 and 5');
+                                                                return;
+                                                            }
+                                                            
+                                                            fetch(`/api/posts/${discussionPost._id}/comments`, {
+                                                                method: 'POST',
+                                                                headers: {
+                                                                    'Content-Type': 'application/json'
+                                                                },
+                                                                credentials: 'include',
+                                                                body: JSON.stringify({
+                                                                    text: text.trim(),
+                                                                    score: score
+                                                                })
+                                                            })
+                                                            .then(response => {
+                                                                console.log('NYC comment response status:', response.status);
+                                                                console.log('NYC comment response headers:', response.headers.get('content-type'));
+                                                                
+                                                                if (response.ok) {
+                                                                    return response.json().then(data => {
+                                                                        loadDiscussionPost();
+                                                                    });
+                                                                } else {
+                                                                    const contentType = response.headers.get('content-type');
+                                                                    if (contentType && contentType.includes('application/json')) {
+                                                                        return response.json().then(data => {
+                                                                            alert('Error: ' + (data.error || 'Failed to post comment. Please make sure you are logged in.'));
+                                                                        }).catch(() => {
+                                                                            alert('Error: Failed to post comment. Please make sure you are logged in.');
+                                                                        });
+                                                                    } else {
+                                                                        return response.text().then(text => {
+                                                                            console.error('Non-JSON response:', text.substring(0, 200));
+                                                                            alert('Error: Server returned non-JSON response. Status: ' + response.status + '. Please check console for details.');
+                                                                        });
+                                                                    }
+                                                                }
+                                                            })
+                                                            .catch(err => {
+                                                                alert('Error posting comment: ' + err.message);
+                                                                console.error(err);
+                                                            });
+                                                        });
+                                                    }
+                                                }, 100);
+                                            })
+                                            .catch(err => console.error("Error loading comments:", err));
+                                    } else {
+                                        const createDiscussionForm = `
+                                            <div style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;">
+                                                <p style="font-size:12px; margin:5px 0;"><strong>Start Discussion:</strong></p>
+                                                <form id="create-discussion-${incidentId}" style="margin-top:5px;">
+                                                    <textarea name="comment" rows="2" placeholder="Add your comment or context..." required style="width:100%; padding:5px; box-sizing:border-box; font-size:11px;"></textarea>
+                                                    <input type="number" name="score" min="0" max="5" value="3" required style="width:100%; padding:5px; margin-top:5px; box-sizing:border-box; font-size:11px;" placeholder="Score (0-5)">
+                                                    <button type="submit" style="width:100%; margin-top:5px; padding:5px; background:#cb2b3e; color:white; border:none; cursor:pointer; font-size:11px;">Create Discussion & Comment</button>
+                                                </form>
+                                            </div>
+                                        `;
+                                        
+                                        const fullContent = `
+                                            <div class="incident-preview" style="max-width:300px;">
+                                                <h3 style="color: #d32f2f; margin:0 0 10px 0; font-size:16px;">NYC Shooting Incident</h3>
+                                                <p style="margin:3px 0; font-size:12px;"><strong>Date:</strong> ${incident.occur_date}</p>
+                                                <p style="margin:3px 0; font-size:12px;"><strong>Time:</strong> ${incident.occur_time}</p>
+                                                <p style="margin:3px 0; font-size:12px;"><strong>Boro:</strong> ${incident.boro}</p>
+                                                <p style="margin:3px 0; font-size:12px;"><strong>Location:</strong> ${incident.location_desc || 'Street'}</p>
+                                                <p style="margin:5px 0; font-size:10px; color:#666;"><small>Source: NYC Open Data</small></p>
+                                                ${createDiscussionForm}
+                                            </div>
+                                        `;
+                                        
+                                        marker.setPopupContent(fullContent);
+                                        
+                                        setTimeout(() => {
+                                            const form = document.getElementById(`create-discussion-${incidentId}`);
+                                            if (form) {
+                                                form.addEventListener('submit', function(e) {
+                                                    e.preventDefault();
+                                                    const formData = new FormData(e.target);
+                                                    const comment = formData.get('comment');
+                                                    const scoreStr = formData.get('score');
+                                                    const score = parseInt(scoreStr);
+                                                    
+                                                    if (!comment || comment.trim().length === 0) {
+                                                        alert('Please enter a comment');
+                                                        return;
+                                                    }
+                                                    
+                                                    if (isNaN(score) || score < 0 || score > 5) {
+                                                        alert('Please enter a valid score between 0 and 5');
+                                                        return;
+                                                    }
+                                                    
+                                                    const title = `NYC Shooting Incident - ${incident.occur_date} - ${incident.boro}`;
+                                                    const body = `Official NYC Shooting Incident\n\nDate: ${incident.occur_date}\nTime: ${incident.occur_time}\nBorough: ${incident.boro}\nLocation: ${incident.location_desc || 'Street'}\n\nCommunity Comment: ${comment.trim()}`;
+                                                    
+                                                    fetch('/api/posts', {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'Content-Type': 'application/json'
+                                                        },
+                                                        credentials: 'include',
+                                                        body: JSON.stringify({
+                                                            title: title,
+                                                            body: body,
+                                                            location: {
+                                                                latitude: lat,
+                                                                longitude: lng
+                                                            },
+                                                            photo: null,
+                                                            sensitive: false
+                                                        })
+                                                    })
+                                                    .then(response => {
+                                                        const contentType = response.headers.get('content-type');
+                                                        if (response.ok) {
+                                                            if (contentType && contentType.includes('application/json')) {
+                                                                return response.json();
+                                                            } else {
+                                                                throw new Error('Server returned non-JSON response');
+                                                            }
+                                                        } else {
+                                                            if (contentType && contentType.includes('application/json')) {
+                                                                return response.json().then(data => {
+                                                                    throw new Error(data.error || 'Failed to create discussion. Please make sure you are logged in.');
+                                                                });
+                                                            } else {
+                                                                throw new Error('Failed to create discussion. Please make sure you are logged in.');
+                                                            }
+                                                        }
+                                                    })
+                                                    .then(post => {
+                                                        console.log('Created discussion post:', post);
+                                                        console.log('Posting comment to post ID:', post._id);
+                                                        const commentUrl = `/api/posts/${post._id}/comments`;
+                                                        console.log('Comment URL:', commentUrl);
+                                                        return fetch(commentUrl, {
+                                                            method: 'POST',
+                                                            headers: {
+                                                                'Content-Type': 'application/json'
+                                                            },
+                                                            credentials: 'include',
+                                                            body: JSON.stringify({
+                                                                text: comment.trim(),
+                                                                score: score
+                                                            })
+                                                        });
+                                                    })
+                                                    .then(response => {
+                                                        console.log('Create discussion comment response status:', response.status);
+                                                        console.log('Create discussion comment response URL:', response.url);
+                                                        console.log('Create discussion comment response headers:', response.headers.get('content-type'));
+                                                        console.log('Create discussion comment redirected:', response.redirected);
+                                                        
+                                                        if (response.ok) {
+                                                            const contentType = response.headers.get('content-type');
+                                                            if (contentType && contentType.includes('application/json')) {
+                                                                return response.json().then(data => {
+                                                                    marker.closePopup();
+                                                                    setTimeout(() => {
+                                                                        marker.openPopup();
+                                                                        loadDiscussionPost();
+                                                                    }, 100);
+                                                                });
+                                                            } else {
+                                                                return response.text().then(text => {
+                                                                    console.error('Non-JSON response (OK):', text.substring(0, 500));
+                                                                    throw new Error('Server returned non-JSON response');
+                                                                });
+                                                            }
+                                                        } else {
+                                                            const contentType = response.headers.get('content-type');
+                                                            if (contentType && contentType.includes('application/json')) {
+                                                                return response.json().then(data => {
+                                                                    alert('Error: ' + (data.error || 'Failed to post comment. Please make sure you are logged in.'));
+                                                                }).catch(() => {
+                                                                    alert('Error: Failed to post comment. Please make sure you are logged in.');
+                                                                });
+                                                            } else {
+                                                                return response.text().then(text => {
+                                                                    console.error('Non-JSON response (Error):', text.substring(0, 500));
+                                                                    console.error('Response status:', response.status);
+                                                                    console.error('Response URL:', response.url);
+                                                                    alert('Error: Server returned non-JSON response. Status: ' + response.status + '. Check console for details.');
+                                                                });
+                                                            }
+                                                        }
+                                                    })
+                                                    .catch(err => {
+                                                        alert('Error: ' + err.message);
+                                                        console.error(err);
+                                                    });
+                                                });
+                                            }
+                                        }, 100);
+                                    }
+                                })
+                                .catch(err => console.error("Error loading discussion:", err));
+                        };
+                        
+                        marker.on('popupopen', function() {
+                            loadDiscussionPost();
+                        });
+                        
+                        const initialContent = `
+                            <div class="incident-preview" style="max-width:300px;">
+                                <h3 style="color: #d32f2f; margin:0 0 10px 0; font-size:16px;">NYC Shooting Incident</h3>
+                                <p style="margin:3px 0; font-size:12px;"><strong>Date:</strong> ${incident.occur_date}</p>
+                                <p style="margin:3px 0; font-size:12px;"><strong>Time:</strong> ${incident.occur_time}</p>
+                                <p style="margin:3px 0; font-size:12px;"><strong>Boro:</strong> ${incident.boro}</p>
+                                <p style="margin:3px 0; font-size:12px;"><strong>Location:</strong> ${incident.location_desc || 'Street'}</p>
+                                <p style="margin:5px 0; font-size:10px; color:#666;"><small>Source: NYC Open Data</small></p>
+                                <p style="font-style:italic; color:#666; font-size:12px; margin-top:10px;">Loading discussion...</p>
                             </div>
                         `;
-                        L.marker([incident.latitude, incident.longitude], { icon: redIcon })
-                            .bindPopup(popupContent)
-                            .addTo(nycMarkers);
+                        
+                        marker.bindPopup(initialContent, {maxWidth: 350}).addTo(nycMarkers);
                     }
                 });
                 updateHeatmap();
