@@ -9,7 +9,8 @@ const constructorMethod = (app) => {
   app.use('/test', testRoute);
   app.use('/', authRoutes);
   app.use('/user', userRoutes);
-  app.use('/posts', postsRoutes);
+  app.use('/user', userRoutes);
+  app.use('/api/posts', postsRoutes);
   app.use('/reports', reportsRoutes);
   app.use('/', webRoutes);
 

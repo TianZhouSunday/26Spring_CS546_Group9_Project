@@ -226,7 +226,7 @@
 
         // 3. Fetch and display internal posts from database (Blue markers)
         // Using the API endpoint from server/routes/posts.js
-        fetch('/posts')
+        fetch('/api/posts')
             .then(response => {
                 if (!response.ok) throw new Error("Failed to fetch internal posts");
                 return response.json();
@@ -304,7 +304,7 @@
             const popupContent = `
                 <div class="popup-form">
                     <h3>Report Incident Here</h3>
-                    <form action="/posts" method="POST">
+                    <form action="/api/posts" method="POST">
                         <input type="hidden" name="latitude" value="${lat}">
                         <input type="hidden" name="longitude" value="${lng}">
                         

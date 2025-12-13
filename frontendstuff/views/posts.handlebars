@@ -1,0 +1,42 @@
+<div class="container">
+    <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <h1>My Posts</h1>
+        <a href="/map" class="button-primary" style="text-decoration: none;">Create Post (Map)</a>
+    </div>
+
+    {{#if posts}}
+    <div style="display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+        {{#each posts}}
+        <div class="post-detail-container" style="padding: 1.5rem;">
+            <h2 style="font-size: 1.4rem; margin-bottom: 0.5rem;">
+                <a href="/posts/{{this._id}}" style="text-decoration: none; color: #333;">{{this.title}}</a>
+            </h2>
+
+            {{#if this.sensitive}}
+            <span class="sensitive-badge">Sensitive Content</span>
+            {{/if}}
+
+            <div style="margin: 10px 0; color: #666; font-size: 0.9rem;">
+                <p>📅 {{this.date}}</p>
+                <p>📍 {{this.location.latitude}}, {{this.location.longitude}}</p>
+            </div>
+
+            {{#if this.body}}
+            <p style="margin-bottom: 1rem; line-height: 1.4;">
+                {{this.body}}
+            </p>
+            {{/if}}
+
+            <a href="/posts/{{this._id}}" class="button-primary"
+                style="display: inline-block; padding: 6px 12px; font-size: 0.9rem; text-decoration: none;">Read
+                More</a>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div style="text-align: center; margin-top: 50px;">
+        <h3>No posts yet.</h3>
+        <p>Go to the <a href="/map">Map</a> to define the first danger zone!</p>
+    </div>
+    {{/if}}
+</div>
