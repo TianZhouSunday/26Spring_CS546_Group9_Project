@@ -103,23 +103,23 @@
 <div class="map-controls">
     <label>
         <input type="checkbox" id="toggleHeatmap" checked>
-        🔥 Show Heatmap
+        Display Heatmap
     </label>
     <label>
         <input type="checkbox" id="toggleMarkers" checked>
-        📍 Show Markers
+        View Crime Markers
     </label>
     <label>
         <input type="checkbox" id="toggleCommunity" checked>
-        🔵 Community Posts
+        View Community Posts
     </label>
     <label>
         <input type="checkbox" id="toggleNYC" checked>
-        🔴 NYC Official Data
+        View NYC Official Data
     </label>
     <div class="slider-container">
         <span>Heatmap Radius:</span>
-        <input type="range" id="heatRadius" min="10" max="50" value="25">
+        <input type="range" id="heatRadius" min="20" max="50" value="25">
         <span id="radiusValue">25</span>
     </div>
     <div class="slider-container">
@@ -144,6 +144,8 @@
             maxBounds: bounds,
             maxBoundsViscosity: 1.0
         }).setView([40.7128, -74.0060], 11);
+
+        map.invalidateSize();
 
         L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
             maxZoom: 20,
@@ -177,19 +179,14 @@
         // 4. Heatmap data arrays
         let communityHeatData = [];
         let nycHeatData = [];
-        let heatConfig = {
-            radius: 25,
-            blur: 15,
-            gradient: { 0.0: 'blue', 0.25: 'cyan', 0.5: 'lime', 0.75: 'yellow', 1.0: 'red' }
-    };
+        let heatLayer = null;
 
-        // 5. Heatmap configuration
         let heatConfig = {
-            radius: 25,
-            blur: 15,
-            maxZoom: 17,
-            max: 1.0,
-            minOpacity: 0.3,
+            radius: 50,
+            blur: 35,
+            maxZoom: 12,
+            max: 0.6,
+            minOpacity: 0.4,
             gradient: {
                 0.0: 'blue',
                 0.25: 'cyan',
@@ -237,6 +234,10 @@
             .then(posts => {
                 posts.forEach(post => {
                     if (post.location && post.location.latitude && post.location.longitude) {
+                        const lat = post.location.latitude;
+                        const lng = post.location.longitude;
+                        communityHeatData.push([lat, lng, 0.5]);
+
                         const sensitiveWarning = post.sensitive ? '<p style="color:red;font-weight:bold;">⚠️ Sensitive Content</p>' : '';
                         const popupContent = `
                             <div class="post-preview">
@@ -249,7 +250,7 @@
                         `;
                         L.marker([post.location.latitude, post.location.longitude], { icon: blueIcon })
                             .bindPopup(popupContent)
-                            .addTo(map);
+                            .addTo(communityMarkers);
                     }
                 });
                 updateHeatmap();
@@ -265,6 +266,11 @@
             .then(data => {
                 data.forEach(incident => {
                     if (incident.latitude && incident.longitude) {
+                        const lat = parseFloat(incident.latitude);
+                        const lng = parseFloat(incident.longitude);
+
+                        nycHeatData.push([lat, lng, 1.0]);
+
                         const popupContent = `
                             <div class="incident-preview">
                                 <h3 style="color: #d32f2f;">NYC Shooting Incident</h3>
@@ -277,7 +283,7 @@
                         `;
                         L.marker([incident.latitude, incident.longitude], { icon: redIcon })
                             .bindPopup(popupContent)
-                            .addTo(map);
+                            .addTo(nycMarkers);
                     }
                 });
                 updateHeatmap();
@@ -376,7 +382,7 @@
         const legend = L.control({ position: 'bottomright' });
         legend.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'legend');
-            div.innerHTML = '
+            div.innerHTML = `
                 <strong>Legend</strong><br>
                 <i style="background: #2b82cb"></i> Community Posts<br>
                 <i style="background: #cb2b3e"></i> NYC Shooting Data<br>
@@ -387,7 +393,7 @@
                     <span>Low</span>
                     <span>High</span>
                 </div>
-            ';
+            `;
             return div;
         };
         legend.addTo(map);
