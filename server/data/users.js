@@ -14,7 +14,7 @@ const checkString = (str) => {
  * Required fields: username, password, email.
  * Initialize all other fields in the schema
  */
-export const createUser = async (username, password, email, hideSensitiveContent = false) => {
+export const createUser = async (username, password, email, hideSensitiveContent = true) => {
   //validate input
   if (!checkString(username) || !checkString(password) || !checkString(email)) {
     throw Error('createUser: Must provide a valid username, password, and email.');
@@ -47,20 +47,13 @@ export const createUser = async (username, password, email, hideSensitiveContent
   const newUser = {
     username: username,
     password: hashedPassword,
-    phone_number: null,
     email: email,
-    age: null,
-    home_address: null,
-    location: {
-      longitude: null,
-      latitude: null
-    },
+    borough: null,
     profile_picture: null,
     user_score: 0,
     posts: [],
     comments: [],
     blocked_users: [],
-    reports: [],
     reports: [],
     hideSensitiveContent: hideSensitiveContent,
     role: "user"
@@ -96,9 +89,7 @@ export const checkUser = async (email, password) => {
     username: user.username,
     phone_number: user.phone_number,
     email: user.email,
-    age: user.age,
-    home_address: user.home_address,
-    location: user.location,
+    borough: user.borough,
     profile_picture: user.profile_picture,
     user_score: user.user_score,
     posts: user.posts,
@@ -113,16 +104,13 @@ export const checkUser = async (email, password) => {
 export const updateUser = async (
   userId,
   username,
-  phone_number,
   email,
-  age,
-  home_address,
-  location,
+  borough,
   profile_picture,
   hideSensitiveContent
 ) => {
   //validate input
-  if (!checkString(userId) || !checkString(username) || !checkString(email)) {
+  if (!checkString(userId) || !checkString(username) || !checkString(email) || !checkString(borough)) {
     throw Error('updateUser: Must provide a valid Id, username and email.');
   }
   const userCollection = await users();
@@ -148,31 +136,12 @@ export const updateUser = async (
 
 
   //validate remaining fields
-  if (phone_number !== null && typeof phone_number !== "string") {
-    throw Error("updateUser: phone_number must be a string or null");
+  const boroughs = ["manhattan", "brooklyn", "queens", "bronx", "staten island"];
+  borough = borough.trim().toLowerCase();
+  if (typeof borough !== "string" || !boroughs.includes(borough)) {
+    throw new Error("Invalid borough. Must be one of NYC's five boroughs.");
   }
 
-  if (age !== null) {
-    if (typeof age !== "number" || age < 0 || age > 120) {
-      throw Error("updateUser: age must be a valid number between 0-120 or null");
-    }
-  }
-
-  if (home_address !== null && !checkString(home_address)) {
-    throw Error("updateUser: home_address must be a valid string or null");
-  }
-
-  if (location !== null) {
-    if (typeof location !== "object") {
-      throw Error("updateUser: location must be an object with latitude & longitude");
-    }
-    if (
-      typeof location.latitude !== "number" ||
-      typeof location.longitude !== "number"
-    ) {
-      throw Error("updateUser: location must include valid numeric latitude & longitude");
-    }
-  }
 
   if (profile_picture !== null && typeof profile_picture !== "string") {
     throw Error("updateUser: profile_picture must be a string URL or null");
@@ -183,18 +152,12 @@ export const updateUser = async (
   }
 
   const updatedUser = {
-    username,
-    phone_number,
-    email,
-    age,
-    home_address,
-    location,
-    profile_picture
+    username: username,
+    email: email,
+    borough: borough,
+    profile_picture: profile_picture,
+    hideSensitiveContent: hideSensitiveContent
   };
-
-  if (hideSensitiveContent !== undefined && hideSensitiveContent !== null) {
-    updatedUser.hideSensitiveContent = hideSensitiveContent;
-  }
 
   //perform update
   const updateRes = await userCollection.updateOne(

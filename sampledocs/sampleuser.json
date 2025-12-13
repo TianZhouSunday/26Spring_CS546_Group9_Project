@@ -2,15 +2,8 @@
     "_id": "507f1f77bcf86cd799439011",
     "username": "user123",
     "password": "$2b$16$5KhpU9wvlhC5pShqOPWkLO/0HiBICkZDKtWemuPxgHy5eNM7s9GPK",
-    "phone_number": "1234567890",
     "email": "firstnamelastname@gmail.com",
-    "age": "20",
-    "home_address": "10 PA St, Hoboken, NJ",
-    "location": 
-        {
-            "longitude": 40.7411, 
-            "latitude": 73.9897
-        },
+    "borough": "Queens",
     "profile_picture": "/static/users/pfp.jpg",
     "user_score": 0,
     "posts": ["690ba1d9a6fd31f3a68dd55d, 690ba1e7b0779667c4e480df"],
