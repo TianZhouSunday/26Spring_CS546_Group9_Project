@@ -8,12 +8,15 @@ import { fileURLToPath } from 'url';
 
 const app = express();
 
+
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use("/public", express.static(path.join(__dirname, "../frontendstuff/public")));
 app.use("/src", express.static(path.join(__dirname, "../frontendstuff/src")));
 app.engine('handlebars', exphbs.engine({
   defaultLayout: "main",

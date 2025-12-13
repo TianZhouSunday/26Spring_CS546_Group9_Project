@@ -62,42 +62,63 @@ router.get('/logout', (req, res) => {
   });
 });
 
-// update profile settings
-router.post('/profile/settings', async (req, res) => {
+// edit profile/settings
+router.get("/edit-profile", async (req, res) => {
   if (!req.session.user) {
-    return res.redirect('/login');
+    return res.redirect("/login");
+  }
+
+  return res.render("edit-profile", {
+    title: "Edit Profile",
+    user: req.session.user
+  });
+});
+
+router.post("/edit-profile", async (req, res) => {
+  if (!req.session.user) {
+    return res.redirect("/login");
   }
 
   try {
-    const { hideSensitiveContent } = req.body;
-    const sensitivePref = hideSensitiveContent === 'on' || hideSensitiveContent === true;
-
     const user = req.session.user;
+
+    const {
+      username,
+      email,
+      borough,
+      profile_picture,
+      hideSensitiveContent
+    } = req.body;
+
+    const sensitivePref =
+      hideSensitiveContent === "on" || hideSensitiveContent === true;
 
     await updateUser(
       user._id.toString(),
-      user.username,
-      user.phone_number,
-      user.email,
-      user.age,
-      user.home_address,
-      user.location,
-      user.profile_picture,
+      username,
+      email,
+      borough,
+      profile_picture || null,
       sensitivePref
     );
 
-    // Update session
+    req.session.user.username = username.trim().toLowerCase();
+    req.session.user.email = email.trim().toLowerCase();
+    req.session.user.borough = borough;
+    req.session.user.profile_picture = profile_picture || null;
     req.session.user.hideSensitiveContent = sensitivePref;
 
-    return res.redirect('/profile');
+    return res.redirect("/profile");
+
   } catch (e) {
-    return res.status(500).render("profile", {
-      title: "Your Profile",
+    return res.status(400).render("edit-profile", {
+      title: "Edit Profile",
       user: req.session.user,
-      error: "Failed to update settings"
+      error: e.message
     });
   }
 });
+
 
 //profile
 router.get('/profile', (req, res) => {
