@@ -179,7 +179,7 @@ router.post('/', async (req, res) => {
     // Try to create
     try {
         const newPost = await createPost(title, body, photo, location, sensitive, userId);
-        res.redirect('/map');
+        res.status(201).json(newPost);
     } catch (e) {
         // Error classification
         if (typeof e === 'string' && (e.includes("must be") || e.includes("length must"))) {
@@ -327,6 +327,13 @@ router.delete('/:id', async (req, res) => {
 
 
 router.post('/:id/comments', async (req, res) => {
+    console.log('=== POST /:id/comments route hit ===');
+    console.log('Request params:', req.params);
+    console.log('Request body:', req.body);
+    console.log('Request path:', req.path);
+    console.log('Request url:', req.url);
+    console.log('Session user:', req.session.user ? 'exists' : 'missing');
+    
     let id;
     // Check validate ID (400 error)
     try {
@@ -340,29 +347,66 @@ router.post('/:id/comments', async (req, res) => {
         return res.status(401).json({ error: 'You must be logged in to comment.' });
     }
 
+    // Validate user ID
+    if (!req.session.user._id) {
+        return res.status(401).json({ error: 'Invalid user session.' });
+    }
+
+    let userId;
+    try {
+        userId = req.session.user._id.toString();
+        helper.AvailableID(userId, 'user ID');
+    } catch (e) {
+        console.error('Invalid user ID in session:', req.session.user._id);
+        return res.status(401).json({ error: 'Invalid user session.' });
+    }
+
     const { text, score } = req.body;
 
     // Check comment text
+    if (!text || typeof text !== 'string') {
+        return res.status(400).json({ error: 'Comment text is required and must be a string' });
+    }
+    
     try {
         helper.AvailableString(text, 'comment text');
     } catch (e) {
-        return res.status(400).json({ error: e });
+        return res.status(400).json({ error: e.toString() });
     }
 
     // Check score (optional or required? User schema example has it. My createComment implementation requires it)
-    if (score === undefined) {
+    if (score === undefined || score === null) {
         return res.status(400).json({ error: 'Score is required' });
+    }
+    
+    const scoreNum = Number(score);
+    if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 5) {
+        return res.status(400).json({ error: 'Score must be a valid number between 0 and 5' });
     }
 
     try {
-        const newComment = await commentData.createComment(id, req.session.user._id.toString(), text, score);
+        console.log('Calling createComment...');
+        const newComment = await commentData.createComment(id, userId, text, scoreNum);
+        console.log('createComment returned:', newComment);
+        console.log('Sending response...');
         res.status(201).json(newComment);
+        console.log('Response sent successfully');
     } catch (e) {
+        console.error('=== ERROR creating comment ===');
+        console.error('Error:', e);
+        console.error('Error type:', typeof e);
+        console.error('Error stack:', e.stack);
+        console.error('Post ID:', id);
+        console.error('User ID:', userId);
+        console.error('Text:', text);
+        console.error('Score:', scoreNum);
         if (typeof e === 'string' && (e.includes("No post found") || e.includes("not found"))) {
             return res.status(404).json({ error: e.toString() });
         }
-        console.error(e);
-        res.status(500).json({ error: e.toString() });
+        if (typeof e === 'string' && (e.includes("must be") || e.includes("Invalid"))) {
+            return res.status(400).json({ error: e.toString() });
+        }
+        res.status(500).json({ error: e.toString() || 'Internal server error' });
     }
 });
 

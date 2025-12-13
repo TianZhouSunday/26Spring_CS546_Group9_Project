@@ -64,7 +64,12 @@ function registerRedirect(req, res, next) {
   next();
 }
 function authenticateUser(req, res, next) {
-  if (!req.session.user) return res.redirect("/login");
+  if (!req.session.user) {
+    if (req.path.startsWith('/api/')) {
+      return res.status(401).json({ error: 'You must be logged in.' });
+    }
+    return res.redirect("/login");
+  }
   next();
 }
 function signout(req, res, next) {
@@ -77,6 +82,15 @@ app.get("/login", loginRedirect);
 app.get("/register", registerRedirect);
 app.get("/", authenticateUser);
 app.get("/signout", signout);
+
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    console.log(`API Request: ${req.method} ${req.path}`);
+    console.log(`  Full URL: ${req.url}`);
+    console.log(`  Has session: ${req.session.user ? 'yes' : 'no'}`);
+  }
+  next();
+});
 
 
 

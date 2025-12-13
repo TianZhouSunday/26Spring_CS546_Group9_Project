@@ -5,9 +5,11 @@ import helper from './helpers.js';
 const exportMethods = {
     async createComment(postId, userId, text, score) {
         // Validate inputs
+        console.log('createComment called with:', { postId, userId, text, score });
         postId = helper.AvailableID(postId, 'post ID');
         userId = helper.AvailableID(userId, 'user ID');
         text = helper.AvailableString(text, 'comment text');
+        console.log('After validation:', { postId, userId, text, score });
 
         // Validate score
         if (score === undefined || score === null) throw 'Score must be provided';
@@ -24,24 +26,42 @@ const exportMethods = {
         };
 
         const commentCollection = await comments();
+        console.log('Inserting comment into database...');
         const insertInfo = await commentCollection.insertOne(newComment);
         if (!insertInfo.acknowledged) throw 'Could not add comment';
+        console.log('Comment inserted successfully');
 
         // Update User: Add comment ID to user's comments list
         const userCollection = await users();
+        let userObjectId;
+        try {
+            userObjectId = new ObjectId(userId);
+        } catch (e) {
+            throw `Invalid user ID format: ${userId}`;
+        }
+        console.log('Updating user comments list...');
         const updateUser = await userCollection.updateOne(
-            { _id: new ObjectId(userId) },
+            { _id: userObjectId },
             { $push: { comments: newComment._id } }
         );
         if (!updateUser.matchedCount) throw 'User not found';
+        console.log('User updated successfully');
 
         // Update Post: Add comment ID to post's comments list
         const postCollection = await posts();
+        let postObjectId;
+        try {
+            postObjectId = new ObjectId(postId);
+        } catch (e) {
+            throw `Invalid post ID format: ${postId}`;
+        }
+        console.log('Updating post comments list...');
         const updatePost = await postCollection.updateOne(
-            { _id: new ObjectId(postId) },
+            { _id: postObjectId },
             { $push: { comments: newComment._id } }
         );
         if (!updatePost.matchedCount) throw 'Post not found';
+        console.log('Post updated successfully, returning comment');
 
         return newComment;
     },
@@ -64,15 +84,27 @@ const exportMethods = {
 
         // Update User
         const userCollection = await users();
+        let userObjectId;
+        try {
+            userObjectId = new ObjectId(comment.user);
+        } catch (e) {
+            throw `Invalid user ID format in comment: ${comment.user}`;
+        }
         await userCollection.updateOne(
-            { _id: new ObjectId(comment.user) },
+            { _id: userObjectId },
             { $pull: { comments: new ObjectId(commentId) } }
         );
 
         // Update Post
         const postCollection = await posts();
+        let postObjectId;
+        try {
+            postObjectId = new ObjectId(comment.post);
+        } catch (e) {
+            throw `Invalid post ID format in comment: ${comment.post}`;
+        }
         await postCollection.updateOne(
-            { _id: new ObjectId(comment.post) },
+            { _id: postObjectId },
             { $pull: { comments: new ObjectId(commentId) } }
         );
 
