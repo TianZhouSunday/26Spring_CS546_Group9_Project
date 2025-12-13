@@ -11,12 +11,12 @@ const exportMethods = {
         text = helper.AvailableString(text, 'comment text');
         console.log('After validation:', { postId, userId, text, score });
 
-        // Validate score
+        // validate score
         if (score === undefined || score === null) throw 'Score must be provided';
         score = Number(score);
         if (isNaN(score) || score < 0 || score > 5) throw 'Score must be a valid number between 0 and 5';
 
-        // Create new comment object following the schema
+        // create new comment object following the schema
         const newComment = {
             _id: new ObjectId(),
             text: text,
@@ -31,7 +31,7 @@ const exportMethods = {
         if (!insertInfo.acknowledged) throw 'Could not add comment';
         console.log('Comment inserted successfully');
 
-        // Update User: Add comment ID to user's comments list
+        // pdate user: add comment ID to user's comments list
         const userCollection = await users();
         let userObjectId;
         try {
@@ -47,7 +47,7 @@ const exportMethods = {
         if (!updateUser.matchedCount) throw 'User not found';
         console.log('User updated successfully');
 
-        // Update Post: Add comment ID to post's comments list
+        // Update post: add comment ID to post's comments list
         const postCollection = await posts();
         let postObjectId;
         try {

@@ -144,10 +144,11 @@
             [41.100, -73.600]  // Northeast coordinates
         ];
 
-        const map = L.map('map', {
+        window.map = L.map('map', {
             maxBounds: bounds,
             maxBoundsViscosity: 1.0
         }).setView([40.7128, -74.0060], 11);
+        const map = window.map;
 
         map.invalidateSize();
 
@@ -249,11 +250,14 @@
                             fetch(`/api/posts/${postId}/comments`)
                                 .then(response => response.json())
                                 .then(comments => {
+                                    const currentUserId = '{{user._id}}';
                                     let commentsHtml = '';
                                     if (comments.length > 0) {
                                         commentsHtml = '<div style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;"><strong>Comments:</strong><ul style="margin:5px 0; padding-left:20px; max-height:100px; overflow-y:auto; font-size:12px;">';
                                         comments.forEach(comment => {
-                                            commentsHtml += `<li style="margin-bottom:3px;">${comment.text} <small>(Score: ${comment.score})</small></li>`;
+                                            const isOwner = comment.user === currentUserId;
+                                            const deleteBtn = isOwner ? `<button onclick="deleteMapComment('${postId}', '${comment._id}', '${postId}')" style="margin-left:5px; padding:2px 5px; font-size:10px; background:#dc3545; color:white; border:none; cursor:pointer; border-radius:3px;">Delete</button>` : '';
+                                            commentsHtml += `<li style="margin-bottom:3px;" id="comment-${comment._id}">${comment.text} <small>(Score: ${comment.score})</small> ${deleteBtn}</li>`;
                                         });
                                         commentsHtml += '</ul></div>';
                                     } else {
@@ -425,11 +429,14 @@
                                         fetch(`/api/posts/${discussionPost._id}/comments`)
                                             .then(response => response.json())
                                             .then(comments => {
+                                                const currentUserId = '{{user._id}}';
                                                 let commentsHtml = '';
                                                 if (comments.length > 0) {
                                                     commentsHtml = '<div style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;"><strong>Comments:</strong><ul style="margin:5px 0; padding-left:20px; max-height:100px; overflow-y:auto; font-size:12px;">';
                                                     comments.forEach(comment => {
-                                                        commentsHtml += `<li style="margin-bottom:3px;">${comment.text} <small>(Score: ${comment.score})</small></li>`;
+                                                        const isOwner = comment.user === currentUserId;
+                                                        const deleteBtn = isOwner ? `<button onclick="deleteMapComment('${discussionPost._id}', '${comment._id}', '${discussionPost._id}')" style="margin-left:5px; padding:2px 5px; font-size:10px; background:#dc3545; color:white; border:none; cursor:pointer; border-radius:3px;">Delete</button>` : '';
+                                                        commentsHtml += `<li style="margin-bottom:3px;" id="comment-${comment._id}">${comment.text} <small>(Score: ${comment.score})</small> ${deleteBtn}</li>`;
                                                     });
                                                     commentsHtml += '</ul></div>';
                                                 } else {
@@ -825,4 +832,43 @@
         };
         legend.addTo(map);
     });
+
+    function deleteMapComment(postId, commentId, refreshPostId) {
+        if (!confirm('Are you sure you want to delete this comment?')) {
+            return;
+        }
+        
+        fetch(`/api/posts/${postId}/comments/${commentId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        })
+        .then(response => {
+            if (response.ok) {
+                const commentElement = document.getElementById(`comment-${commentId}`);
+                if (commentElement) {
+                    commentElement.remove();
+                }
+                if (window.map) {
+                    const allMarkers = [];
+                    window.map.eachLayer(layer => {
+                        if (layer instanceof L.Marker && layer.isPopupOpen()) {
+                            allMarkers.push(layer);
+                        }
+                    });
+                    if (allMarkers.length > 0) {
+                        const openMarker = allMarkers[0];
+                        openMarker.fire('popupopen');
+                    }
+                }
+            } else {
+                return response.json().then(data => {
+                    alert('Error: ' + (data.error || 'Failed to delete comment'));
+                });
+            }
+        })
+        .catch(err => {
+            alert('Error deleting comment: ' + err.message);
+            console.error(err);
+        });
+    }
 </script>

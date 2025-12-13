@@ -347,7 +347,7 @@ router.post('/:id/comments', async (req, res) => {
         return res.status(401).json({ error: 'You must be logged in to comment.' });
     }
 
-    // Validate user ID
+    // validate user ID
     if (!req.session.user._id) {
         return res.status(401).json({ error: 'Invalid user session.' });
     }
@@ -374,7 +374,7 @@ router.post('/:id/comments', async (req, res) => {
         return res.status(400).json({ error: e.toString() });
     }
 
-    // Check score (optional or required? User schema example has it. My createComment implementation requires it)
+    // Check score
     if (score === undefined || score === null) {
         return res.status(400).json({ error: 'Score is required' });
     }
