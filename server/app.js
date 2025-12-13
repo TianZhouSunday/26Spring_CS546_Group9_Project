@@ -5,9 +5,12 @@ import exphbs from "express-handlebars";
 import constructorMethod from "./routes/index.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { dbConnection } from './config/mongoConnection.js';
 
 const app = express();
 
+const db = await dbConnection();
+console.log('MongoDB connected to:', db.databaseName);
 
 
 const __filename = fileURLToPath(import.meta.url);
