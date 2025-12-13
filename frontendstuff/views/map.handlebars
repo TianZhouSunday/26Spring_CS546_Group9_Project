@@ -3,17 +3,133 @@
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<!-- plugin for heatmap (leaflet)-->
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
-<div id="map-container">
-    <div class="map-overlay-header">
-        <h2 style="margin: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
-            <span style="color: #dc2626;">NYC Danger Map</span>
-        </h2>
-        <span style="color: #ddd;">|</span>
-        <p style="margin: 0; font-size: 0.9rem; color: #555;">Click map to report</p>
+<style>
+    #map { 
+        height: 600px; 
+        width: 100%; 
+        margin-top: 20px; 
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .popup-form {
+        min-width: 250px;
+    }
+    .popup-form input, .popup-form textarea {
+        width: 100%;
+        margin-bottom: 8px;
+        padding: 5px;
+        box-sizing: border-box;
+    }
+    .legend {
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+    .legend i {
+        width: 18px;
+        height: 18px;
+        float: left;
+        margin-right: 8px;
+        opacity: 0.7;
+    }
+    /* Map Controls */
+    .map-controls {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .map-controls label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+        padding: 8px 12px;
+        background: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: background 0.2s;
+    }
+    .map-controls label:hover {
+        background: #f0f0f0;
+    }
+    .map-controls input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+    .map-controls input[type="range"] {
+        width: 120px;
+    }
+    .slider-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .slider-container span {
+        font-size: 0.9em;
+        min-width: 80px;
+    }
+    
+    /* Heatmap gradient legend */
+    .heatmap-gradient {
+        width: 120px;
+        height: 12px;
+        background: linear-gradient(to right, #0000ff, #00ffff, #00ff00, #ffff00, #ff0000);
+        border-radius: 3px;
+        margin: 5px 0;
+    }
+    .gradient-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75em;
+        color: #666;
+    }
+</style>
+
+<h1>NYC Safety Map</h1>
+<p>View community reports and official shooting incident data. Click anywhere within NYC to report a new incident.</p>
+
+<!-- Map Controls -->
+<div class="map-controls">
+    <label>
+        <input type="checkbox" id="toggleHeatmap" checked>
+        🔥 Show Heatmap
+    </label>
+    <label>
+        <input type="checkbox" id="toggleMarkers" checked>
+        📍 Show Markers
+    </label>
+    <label>
+        <input type="checkbox" id="toggleCommunity" checked>
+        🔵 Community Posts
+    </label>
+    <label>
+        <input type="checkbox" id="toggleNYC" checked>
+        🔴 NYC Official Data
+    </label>
+    <div class="slider-container">
+        <span>Heatmap Radius:</span>
+        <input type="range" id="heatRadius" min="10" max="50" value="25">
+        <span id="radiusValue">25</span>
     </div>
-    <div id="map"></div>
+    <div class="slider-container">
+        <span>Heatmap Intensity:</span>
+        <input type="range" id="heatIntensity" min="0.1" max="1" step="0.1" value="0.5">
+        <span id="intensityValue">0.5</span>
+    </div>
 </div>
+
+<div id="map"></div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -54,7 +170,64 @@
             shadowSize: [30, 30]
         });
 
-        // Fetch and display internal posts from database (Blue markers)
+        // 3. Layer groups for markers
+        const communityMarkers = L.layerGroup().addTo(map);
+        const nycMarkers = L.layerGroup().addTo(map);
+        
+        // 4. Heatmap data arrays
+        let communityHeatData = [];
+        let nycHeatData = [];
+        let heatConfig = {
+            radius: 25,
+            blur: 15,
+            gradient: { 0.0: 'blue', 0.25: 'cyan', 0.5: 'lime', 0.75: 'yellow', 1.0: 'red' }
+    };
+
+        // 5. Heatmap configuration
+        let heatConfig = {
+            radius: 25,
+            blur: 15,
+            maxZoom: 17,
+            max: 1.0,
+            minOpacity: 0.3,
+            gradient: {
+                0.0: 'blue',
+                0.25: 'cyan',
+                0.5: 'lime',
+                0.75: 'yellow',
+                1.0: 'red'
+            }
+        };
+
+        // Function to update heatmap
+        function updateHeatmap() {
+            const showCommunity = document.getElementById('toggleCommunity').checked;
+            const showNYC = document.getElementById('toggleNYC').checked;
+            const showHeatmap = document.getElementById('toggleHeatmap').checked;
+            
+            // Remove existing heatmap
+            if (heatLayer) {
+                map.removeLayer(heatLayer);
+                heatLayer = null;
+            }
+            
+            if (!showHeatmap) return;
+            
+            // Combine heat data based on toggles
+            let combinedData = [];
+            if (showCommunity) {
+                combinedData = combinedData.concat(communityHeatData);
+            }
+            if (showNYC) {
+                combinedData = combinedData.concat(nycHeatData);
+            }
+            
+            if (combinedData.length > 0) {
+                heatLayer = L.heatLayer(combinedData, heatConfig).addTo(map);
+            }
+        }
+
+        // 3. Fetch and display internal posts from database (Blue markers)
         // Using the API endpoint from server/routes/posts.js
         fetch('/posts')
             .then(response => {
@@ -64,7 +237,7 @@
             .then(posts => {
                 posts.forEach(post => {
                     if (post.location && post.location.latitude && post.location.longitude) {
-                        const sensitiveWarning = post.sensitive ? '<p style="color:red;font-weight:bold;">Sensitive Content</p>' : '';
+                        const sensitiveWarning = post.sensitive ? '<p style="color:red;font-weight:bold;">⚠️ Sensitive Content</p>' : '';
                         const popupContent = `
                             <div class="post-preview">
                                 <h3>${post.title}</h3>
@@ -79,6 +252,7 @@
                             .addTo(map);
                     }
                 });
+                updateHeatmap();
             })
             .catch(err => console.error("Error loading posts:", err));
 
@@ -106,6 +280,7 @@
                             .addTo(map);
                     }
                 });
+                updateHeatmap();
             })
             .catch(err => console.error("Error loading NYC data:", err));
 
@@ -151,13 +326,68 @@
                 .setContent(popupContent)
                 .openOn(map);
         });
+        document.getElementById('toggleHeatmap').addEventListener('change', updateHeatmap);
+        
+        document.getElementById('toggleMarkers').addEventListener('change', function() {
+            if (this.checked) {
+                if (document.getElementById('toggleCommunity').checked) {
+                    map.addLayer(communityMarkers);
+                }
+                if (document.getElementById('toggleNYC').checked) {
+                    map.addLayer(nycMarkers);
+                }
+            } else {
+                map.removeLayer(communityMarkers);
+                map.removeLayer(nycMarkers);
+            }
+        });
+
+        document.getElementById('toggleCommunity').addEventListener('change', function() {
+            if (this.checked && document.getElementById('toggleMarkers').checked) {
+                map.addLayer(communityMarkers);
+            } else {
+                map.removeLayer(communityMarkers);
+            }
+            updateHeatmap();
+        });
+
+        document.getElementById('toggleNYC').addEventListener('change', function() {
+            if (this.checked && document.getElementById('toggleMarkers').checked) {
+                map.addLayer(nycMarkers);
+            } else {
+                map.removeLayer(nycMarkers);
+            }
+            updateHeatmap();
+        });
+
+        document.getElementById('heatRadius').addEventListener('input', function() {
+            heatConfig.radius = parseInt(this.value);
+            document.getElementById('radiusValue').textContent = this.value;
+            updateHeatmap();
+        });
+
+        document.getElementById('heatIntensity').addEventListener('input', function() {
+            heatConfig.max = parseFloat(this.value);
+            document.getElementById('intensityValue').textContent = this.value;
+            updateHeatmap();
+        });
 
         // Add Legend
         const legend = L.control({ position: 'bottomright' });
         legend.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'legend');
-            div.innerHTML += '<i style="background: #2b82cb"></i> Community Posts<br>';
-            div.innerHTML += '<i style="background: #cb2b3e"></i> NYC Shooting Data<br>';
+            div.innerHTML = '
+                <strong>Legend</strong><br>
+                <i style="background: #2b82cb"></i> Community Posts<br>
+                <i style="background: #cb2b3e"></i> NYC Shooting Data<br>
+                <br>
+                <strong>Heatmap Intensity</strong>
+                <div class="heatmap-gradient"></div>
+                <div class="gradient-labels">
+                    <span>Low</span>
+                    <span>High</span>
+                </div>
+            ';
             return div;
         };
         legend.addTo(map);
