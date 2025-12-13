@@ -26,7 +26,9 @@ app.engine('handlebars', exphbs.engine({
     equals(a, b, options) {
       return a === b ? options.fn(this) : options.inverse(this);
     },
-    // check if both conditions are true, e.g. sensitivity of post and user preference
+    eq(a, b) {
+      return a === b;
+    },
     and(a, b) {
       return a && b;
     }

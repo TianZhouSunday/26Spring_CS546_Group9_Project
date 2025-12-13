@@ -96,7 +96,7 @@ router.route('/map').get(async (req, res) => {
   if (!req.session.user) {
     return res.redirect('/login');
   }
-  
+
   res.render('map', {
     title: 'NYC Danger Map',
     user: req.session.user
@@ -160,7 +160,7 @@ router.route('/posts').post(async (req, res) => {
 
   let isSensitive = (sensitive === 'true' || sensitive === 'on');
   let userId = req.session.user._id.toString();
-  
+
   try {
     await createPost(title, body, photo, location, isSensitive, userId);
     // Redirect logic: if created from map (which typically might be referred), 
@@ -183,7 +183,7 @@ router.route('/posts/:id').get(async (req, res) => {
   }
 
   let id = req.params.id;
-  
+
   try {
     helper.AvailableID(id, 'postId');
   } catch (error) {
@@ -196,7 +196,7 @@ router.route('/posts/:id').get(async (req, res) => {
   try {
     let post = await getPostById(id);
     let comments = []; // comments
-    
+
     res.render('post', {
       title: post.title,
       post: post,
@@ -220,7 +220,7 @@ router.route('/posts/:id/delete').post(async (req, res) => {
 
   try {
     let post = await getPostById(id);
-    
+
     let isOwner = (post.user.toString() === req.session.user._id.toString());
     let isAdmin = (req.session.user.role === 'admin');
 
