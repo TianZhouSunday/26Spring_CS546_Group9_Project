@@ -87,7 +87,6 @@ export const checkUser = async (email, password) => {
   return {
     _id: user._id,
     username: user.username,
-    phone_number: user.phone_number,
     email: user.email,
     borough: user.borough,
     profile_picture: user.profile_picture,
@@ -136,7 +135,7 @@ export const updateUser = async (
 
 
   //validate remaining fields
-  const boroughs = ["manhattan", "brooklyn", "queens", "bronx", "staten island"];
+  const boroughs = ["manhattan", "brooklyn", "queens", "bronx", "staten island", "none"];
   borough = borough.trim().toLowerCase();
   if (typeof borough !== "string" || !boroughs.includes(borough)) {
     throw new Error("Invalid borough. Must be one of NYC's five boroughs.");
@@ -147,10 +146,20 @@ export const updateUser = async (
     throw Error("updateUser: profile_picture must be a string URL or null");
   }
 
+  try {
+    new URL(profile_picture);
+  } 
+  catch {
+    throw new Error("Profile picture must be a valid URL.");
+  }
+
+
   if (hideSensitiveContent !== undefined && hideSensitiveContent !== null && typeof hideSensitiveContent !== "boolean") {
     throw Error("updateUser: hideSensitiveContent must be a boolean");
   }
 
+
+  borough = borough.split(" ").map(word => word[0].toUpperCase() + word.slice(1)).join(" ");
   const updatedUser = {
     username: username,
     email: email,

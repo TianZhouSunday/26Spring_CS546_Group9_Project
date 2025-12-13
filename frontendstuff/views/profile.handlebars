@@ -2,26 +2,22 @@
     <h1>{{user.username}}'s Profile</h1>
 
     {{#if user.profile_picture}}
-        <img class="profile-photo"
-                alt="{{user.username}} Profile Photo"
-                src="{{user.profile_picture}}">
+        <img
+            class="profile-photo"
+            alt="{{user.username}} Profile Photo"
+            src="{{user.profile_picture}}">
     {{else}}
-        <img class="profile-photo"
-                alt="No profile photo available for {{user.username}}"
-                src="/public/Default_pfp.svg">
+        <img
+            class="profile-photo"
+            alt="No profile photo available for {{user.username}}"
+            src="/public/Default_pfp.svg">
     {{/if}}
 
-    <p>Email: {{user.email}}</p>
+    <p>Borough: {{user.borough}}</p>
 
-    <div class="settings-section">
-        <h2>Settings</h2>
-        <form action="/profile/settings" method="POST">
-            <div class="checkbox-container">
-                <label for="hideSensitiveContent">Hide Sensitive Content:</label>
-                <input type="checkbox" id="hideSensitiveContent" name="hideSensitiveContent" {{#if
-                    user.hideSensitiveContent}}checked{{/if}}>
-            </div>
-            <button type="submit" class="button-primary">Save Settings</button>
-        </form>
+    <div class="profile-actions">
+        <a href="/edit-profile" class="button-primary">
+            Edit Profile
+        </a>
     </div>
 </div>
