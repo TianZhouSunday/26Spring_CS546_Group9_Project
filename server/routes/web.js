@@ -91,14 +91,14 @@ router.route('/logout').post(async (req, res) => {
   res.redirect('/');
 });
 
-// map page - NEW ROUTE
+// map page
 router.route('/map').get(async (req, res) => {
   if (!req.session.user) {
     return res.redirect('/login');
   }
   
   res.render('map', {
-    title: 'NYC Safety Map',
+    title: 'NYC Danger Map',
     user: req.session.user
   });
 });

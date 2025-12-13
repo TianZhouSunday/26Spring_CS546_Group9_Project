@@ -1,34 +1,37 @@
 {{!-- frontendstuff/views/map.handlebars --}}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-     crossorigin=""/>
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 <style>
-    #map { 
-        height: 600px; 
-        width: 100%; 
-        margin-top: 20px; 
+    #map {
+        height: 600px;
+        width: 100%;
+        margin-top: 20px;
         border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
+
     .popup-form {
         min-width: 250px;
     }
-    .popup-form input, .popup-form textarea {
+
+    .popup-form input,
+    .popup-form textarea {
         width: 100%;
         margin-bottom: 8px;
         padding: 5px;
         box-sizing: border-box;
     }
+
     .legend {
         background: white;
         padding: 10px;
         border-radius: 5px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
     }
+
     .legend i {
         width: 18px;
         height: 18px;
@@ -38,31 +41,32 @@
     }
 </style>
 
-<h1>NYC Safety Map</h1>
+<h1>NYC Danger Map</h1>
 <p>View community reports and official shooting incident data. Click anywhere within NYC to report a new incident.</p>
 
 <div id="map"></div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // 1. Initialize map centered on NYC
-        // Define bounds (Reference: server/data/posts.js)
+        // Initialize map centered on NYC
+        // Bounds are a bit broader so that users can see the full post details
         const bounds = [
-            [40.496, -74.258], // Southwest coordinates
-            [40.916, -73.699]  // Northeast coordinates
+            [40.300, -74.300], // Southwest coordinates
+            [41.100, -73.600]  // Northeast coordinates
         ];
-        
+
         const map = L.map('map', {
             maxBounds: bounds,
             maxBoundsViscosity: 1.0
         }).setView([40.7128, -74.0060], 11);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18,
-            attribution: '© OpenStreetMap contributors'
+        L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '© Google Maps'
         }).addTo(map);
 
-        // 2. Define custom marker icons
+        // Define custom marker icons
         const blueIcon = new L.Icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -81,7 +85,7 @@
             shadowSize: [41, 41]
         });
 
-        // 3. Fetch and display internal posts from database (Blue markers)
+        // Fetch and display internal posts from database (Blue markers)
         // Using the API endpoint from server/routes/posts.js
         fetch('/posts')
             .then(response => {
@@ -101,17 +105,17 @@
                                 <a href="/posts/${post._id}">View Details</a>
                             </div>
                         `;
-                        L.marker([post.location.latitude, post.location.longitude], {icon: blueIcon})
-                         .bindPopup(popupContent)
-                         .addTo(map);
+                        L.marker([post.location.latitude, post.location.longitude], { icon: blueIcon })
+                            .bindPopup(popupContent)
+                            .addTo(map);
                     }
                 });
             })
             .catch(err => console.error("Error loading posts:", err));
 
-        // 4. Fetch and display NYC Official Shooting Data (Red markers)
+        // Fetch and display NYC Official Shooting Data (Red markers)
         // Using SODA API endpoint to get JSON data directly
-        const nycApiUrl = "https://data.cityofnewyork.us/resource/833y-fsy8.json?$limit=100&$order=occur_date DESC"; // Limit to 100 recent incidents for performance
+        const nycApiUrl = "https://data.cityofnewyork.us/resource/833y-fsy8.json?$limit=1000&$order=occur_date DESC"; // historical data is limited to 1000
 
         fetch(nycApiUrl)
             .then(response => response.json())
@@ -128,22 +132,22 @@
                                 <p><small>Source: NYC Open Data</small></p>
                             </div>
                         `;
-                        L.marker([incident.latitude, incident.longitude], {icon: redIcon})
-                         .bindPopup(popupContent)
-                         .addTo(map);
+                        L.marker([incident.latitude, incident.longitude], { icon: redIcon })
+                            .bindPopup(popupContent)
+                            .addTo(map);
                     }
                 });
             })
             .catch(err => console.error("Error loading NYC data:", err));
 
-        // 5. Click event to create a new Post
-        map.on('click', function(e) {
+        // Click event to create a new Post
+        map.on('click', function (e) {
             const lat = e.latlng.lat;
             const lng = e.latlng.lng;
 
             // Check bounds (Double check client side)
             if (lat < 40.496 || lat > 40.916 || lng < -74.258 || lng > -73.699) {
-                alert("Location is outside of NYC boundaries defined in the system.");
+                alert("Location is outside of NYC.");
                 return;
             }
 
@@ -180,7 +184,7 @@
         });
 
         // Add Legend
-        const legend = L.control({position: 'bottomright'});
+        const legend = L.control({ position: 'bottomright' });
         legend.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'legend');
             div.innerHTML += '<i style="background: #2b82cb"></i> Community Posts<br>';
