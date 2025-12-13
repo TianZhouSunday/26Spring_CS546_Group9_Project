@@ -7,28 +7,33 @@
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
 <style>
-    #map { 
-        height: 600px; 
-        width: 100%; 
-        margin-top: 20px; 
+    #map {
+        height: 600px;
+        width: 100%;
+        margin-top: 20px;
         border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
+
     .popup-form {
         min-width: 250px;
     }
-    .popup-form input, .popup-form textarea {
+
+    .popup-form input,
+    .popup-form textarea {
         width: 100%;
         margin-bottom: 8px;
         padding: 5px;
         box-sizing: border-box;
     }
+
     .legend {
         background: white;
         padding: 10px;
         border-radius: 5px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
     }
+
     .legend i {
         width: 18px;
         height: 18px;
@@ -36,50 +41,46 @@
         margin-right: 8px;
         opacity: 0.7;
     }
-    /* Map Controls */
+
+    /* Map Controls - Floating Sidebar Style */
     .map-controls {
+        position: absolute;
+        top: 140px;
+        /* Moved down to avoid overlap */
+        left: 10px;
+        z-index: 1000;
+        /* Above map */
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         display: flex;
+        flex-direction: column;
+        /* Stack vertically for better layout */
         gap: 10px;
-        margin-top: 15px;
-        flex-wrap: wrap;
-        align-items: center;
+        max-width: 250px;
     }
+
     .map-controls label {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 8px;
         cursor: pointer;
-        padding: 8px 12px;
-        background: white;
-        border-radius: 5px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        transition: background 0.2s;
+        font-size: 0.9rem;
     }
-    .map-controls label:hover {
-        background: #f0f0f0;
-    }
-    .map-controls input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
-        cursor: pointer;
-    }
-    .map-controls input[type="range"] {
-        width: 120px;
-    }
+
     .slider-container {
         display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        background: white;
-        border-radius: 5px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        flex-direction: column;
+        gap: 5px;
+        padding: 5px 0;
+        border-top: 1px solid #eee;
     }
-    .slider-container span {
-        font-size: 0.9em;
-        min-width: 80px;
+
+    .slider-container input[type="range"] {
+        width: 100%;
     }
-    
+
     /* Heatmap gradient legend */
     .heatmap-gradient {
         width: 120px;
@@ -88,6 +89,7 @@
         border-radius: 3px;
         margin: 5px 0;
     }
+
     .gradient-labels {
         display: flex;
         justify-content: space-between;
@@ -96,40 +98,42 @@
     }
 </style>
 
-<h1>NYC Safety Map</h1>
-<p>View community reports and official shooting incident data. Click anywhere within NYC to report a new incident.</p>
+<div id="map-container">
+    <div id="map"></div>
 
-<!-- Map Controls -->
-<div class="map-controls">
-    <label>
-        <input type="checkbox" id="toggleHeatmap" checked>
-        Display Heatmap
-    </label>
-    <label>
-        <input type="checkbox" id="toggleMarkers" checked>
-        View Crime Markers
-    </label>
-    <label>
-        <input type="checkbox" id="toggleCommunity" checked>
-        View Community Posts
-    </label>
-    <label>
-        <input type="checkbox" id="toggleNYC" checked>
-        View NYC Official Data
-    </label>
-    <div class="slider-container">
-        <span>Heatmap Radius:</span>
-        <input type="range" id="heatRadius" min="20" max="50" value="25">
-        <span id="radiusValue">25</span>
-    </div>
-    <div class="slider-container">
-        <span>Heatmap Intensity:</span>
-        <input type="range" id="heatIntensity" min="0.1" max="1" step="0.1" value="0.5">
-        <span id="intensityValue">0.5</span>
+    <!-- Map Controls Moved Inside Container -->
+    <div class="map-controls">
+        <h4 style="margin: 0 0 10px 0; font-size: 1rem;">Map Layers</h4>
+        <label>
+            <input type="checkbox" id="toggleMarkers" checked>
+            View Crime Markers
+        </label>
+        <label>
+            <input type="checkbox" id="toggleCommunity" checked>
+            Data: Community
+        </label>
+        <label>
+            <input type="checkbox" id="toggleNYC" checked>
+            Data: NYC Official
+        </label>
+
+        <hr style="width: 100%; border: 0; border-top: 1px solid #eee; margin: 5px 0;">
+
+        <h4 style="margin: 0 0 10px 0; font-size: 1rem;">Heatmap Settings</h4>
+        <label>
+            <input type="checkbox" id="toggleHeatmap">
+            Display Heatmap
+        </label>
+        <div class="slider-container">
+            <span>Radius: <span id="radiusValue">25</span></span>
+            <input type="range" id="heatRadius" min="10" max="60" value="25">
+        </div>
+        <div class="slider-container">
+            <span>Intensity: <span id="intensityValue">0.5</span></span>
+            <input type="range" id="heatIntensity" min="0.1" max="1.5" step="0.1" value="0.5">
+        </div>
     </div>
 </div>
-
-<div id="map"></div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -175,7 +179,7 @@
         // 3. Layer groups for markers
         const communityMarkers = L.layerGroup().addTo(map);
         const nycMarkers = L.layerGroup().addTo(map);
-        
+
         // 4. Heatmap data arrays
         let communityHeatData = [];
         let nycHeatData = [];
@@ -201,15 +205,15 @@
             const showCommunity = document.getElementById('toggleCommunity').checked;
             const showNYC = document.getElementById('toggleNYC').checked;
             const showHeatmap = document.getElementById('toggleHeatmap').checked;
-            
+
             // Remove existing heatmap
             if (heatLayer) {
                 map.removeLayer(heatLayer);
                 heatLayer = null;
             }
-            
+
             if (!showHeatmap) return;
-            
+
             // Combine heat data based on toggles
             let combinedData = [];
             if (showCommunity) {
@@ -218,7 +222,7 @@
             if (showNYC) {
                 combinedData = combinedData.concat(nycHeatData);
             }
-            
+
             if (combinedData.length > 0) {
                 heatLayer = L.heatLayer(combinedData, heatConfig).addTo(map);
             }
@@ -332,10 +336,21 @@
                 .setContent(popupContent)
                 .openOn(map);
         });
-        document.getElementById('toggleHeatmap').addEventListener('change', updateHeatmap);
-        
-        document.getElementById('toggleMarkers').addEventListener('change', function() {
+        document.getElementById('toggleHeatmap').addEventListener('change', function () {
+            updateHeatmap();
+
+            // Auto interaction: If Heatmap ON, turn Markers OFF for clarity
+            const markersToggle = document.getElementById('toggleMarkers');
+            if (this.checked && markersToggle.checked) {
+                markersToggle.checked = false;
+                markersToggle.dispatchEvent(new Event('change')); // Trigger marker logic
+            }
+        });
+
+        document.getElementById('toggleMarkers').addEventListener('change', function () {
             if (this.checked) {
+                // If Markers turned ON, maybe turn Heatmap OFF? (Optional, let's keep it flexible or do the reverse)
+                // For now, just show the layers
                 if (document.getElementById('toggleCommunity').checked) {
                     map.addLayer(communityMarkers);
                 }
@@ -348,7 +363,7 @@
             }
         });
 
-        document.getElementById('toggleCommunity').addEventListener('change', function() {
+        document.getElementById('toggleCommunity').addEventListener('change', function () {
             if (this.checked && document.getElementById('toggleMarkers').checked) {
                 map.addLayer(communityMarkers);
             } else {
@@ -357,7 +372,7 @@
             updateHeatmap();
         });
 
-        document.getElementById('toggleNYC').addEventListener('change', function() {
+        document.getElementById('toggleNYC').addEventListener('change', function () {
             if (this.checked && document.getElementById('toggleMarkers').checked) {
                 map.addLayer(nycMarkers);
             } else {
@@ -366,13 +381,13 @@
             updateHeatmap();
         });
 
-        document.getElementById('heatRadius').addEventListener('input', function() {
+        document.getElementById('heatRadius').addEventListener('input', function () {
             heatConfig.radius = parseInt(this.value);
             document.getElementById('radiusValue').textContent = this.value;
             updateHeatmap();
         });
 
-        document.getElementById('heatIntensity').addEventListener('input', function() {
+        document.getElementById('heatIntensity').addEventListener('input', function () {
             heatConfig.max = parseFloat(this.value);
             document.getElementById('intensityValue').textContent = this.value;
             updateHeatmap();
