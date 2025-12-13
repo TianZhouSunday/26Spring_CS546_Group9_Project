@@ -3,144 +3,167 @@
 * {
     margin: 0; 
     padding: 0;
+    box-sizing: border-box;
 }
+
+html, body {
+    height: 100%; /* Critical for full-screen map */
+}
+
 body {
-    font-family: Geneva, Verdana, sans-serif;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; /* Clean, professional font */
     color: #333;
-    background-color: #f4f4f4;
+    background-color: #f7f7f7;
+    display: flex;
+    flex-direction: column;
 }
+
 header {
-    color: white;
-    background-color: #1e3a8a;
+    background-color: #ffffff;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.08); /* Subtle border-like shadow */
+    position: relative;
+    z-index: 1000;
 }
-main {
-    max-width: 1200px;
-    padding: 0 20px;
-}
-footer {
-    background-color: #1e3a8a;
-    color: white;
-    text-align: center;
-}
+
 nav {
+    display: flex;
     justify-content: space-between;
     align-items: center;
-    max-width: 1200px;
+    height: 80px; /* Fixed height header */
+    padding: 0 24px; /* Standard Airbnb-like padding */
+    max-width: 100%; /* Full width */
 }
+
 .nav-branding a {
-    color: grey;
-    font-weight: bold; 
+    color: #ff385c; /* Danger Red */
+    font-weight: 800;
+    font-size: 1.2rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
+
 .nav-links {
     list-style: none;
     display: flex;
-    gap: 1rem;
-}
-.nav-links a {
+    gap: 1.5rem;
     align-items: center;
-    color: white;
+}
+
+.nav-links a {
+    color: #222;
     text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    padding: 10px 16px;
+    border-radius: 20px;
+    transition: background-color 0.2s;
 }
-.button {
-    border: none;
-    background-color: #1e3a8a;
-    color: white;
+
+.nav-links a:hover {
+    background-color: #f7f7f7;
 }
+
+/* Buttons */
+.button, .link-button {
+    cursor: pointer;
+    font-weight: 600;
+}
+
 .link-button {
     background: none;
-    color: white; 
+    border: none;
+    color: #222;
+    padding: 10px 16px;
+    border-radius: 20px;
 }
-.inline-form {
-    display: inline;
+.link-button:hover {
+    background-color: #f7f7f7;
 }
-.post-details {
-    background: white;    
-}
-.post-details.sensitive { 
-    border: 2px solid #dc2626;
-}
-.post-header { 
-    display: flex; 
-    justify-content: space-between;
-    align-items: start;
-    margin-bottom: 0.5rem;
-}
-.button-danger {
-    background-color: #dc2626;
-    color: white;
-}
-.button-danger:hover {
-    background-color: #b91c1c;
-}
+
 .button-primary {
-    background-color: #2563eb;
+    background-color: #ff385c; /* Danger/Brand Red */
     color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
 }
 .button-primary:hover {
-    background-color: #1d4ed8;
-}
-.post-detail-container {
-    background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-.sensitive-badge {
-    background-color: #dc2626;
-    color: white;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.85rem;
-}
-.post-info {
-    margin-bottom: 1rem;
-}
-.post-photo img {
-    max-width: 100%;
-    border-radius: 6px;
-    margin: 1rem 0;
+    background-color: #d9324e;
 }
 
-.post-content {
-    margin: 1.5rem 0;
-}
-
-.post-actions {
-    margin: 1.5rem 0;
+/* Main Content Area - Flexible */
+main {
+    flex: 1; /* Fills the remaining vertical space */
     display: flex;
-    gap: 1rem;
-}
-
-.comments-section {
-    margin-top: 2rem;
-}
-
-.comment {
-    background: #f8f8f8;
-    padding: 1rem;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-}
-
-.comment-text {
-    margin-bottom: 0.5rem;
-}
-
-.comment-meta {
-    font-size: 0.85rem;
-    color: #666;
-}
-
-.add-comment-section {
-    margin-top: 2rem;
-}
-
-.form-group {
-    margin-bottom: 1rem;
-}
-
-textarea {
+    flex-direction: column;
     width: 100%;
-    padding: 0.5rem;
-    resize: vertical;
+    /* Removed max-width/padding default to allow map to touch edges */
 }
+
+/* Specific Page Containers (for non-map pages) */
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    width: 100%;
+}
+
+/* Footer - Minimalist */
+footer {
+    background-color: #f7f7f7;
+    color: #717171;
+    text-align: center;
+    padding: 20px;
+    font-size: 0.85rem;
+    border-top: 1px solid #ddd;
+}
+
+/* Map Specific Overrides (handled in classes) */
+#map-container {
+    flex: 1; /* Grow to fill main */
+    position: relative;
+    width: 100%;
+    height: 100%; /* Fallback */
+}
+#map {
+    width: 100%;
+    height: 100%;
+    /* No border radius or margin for full immersion */
+}
+
+/* Floating Controls */
+.map-overlay-header {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 500;
+    background: white;
+    padding: 12px 24px;
+    border-radius: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Post Details */
+.post-details.sensitive { border: 2px solid #dc2626; }
+.post-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem; }
+.button-danger { background-color: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 6px;}
+.button-danger:hover { background-color: #b91c1c; }
+.post-detail-container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+.sensitive-badge { background-color: #dc2626; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+.post-photo img { max-width: 100%; border-radius: 8px; margin: 1rem 0; }
+.comment { background: #f1f1f1; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+.comment-text { font-size: 0.95rem; line-height: 1.5; }
+.comment-meta { font-size: 0.8rem; color: #717171; margin-top: 5px; }
+
+/* Popups */
+.popup-form { min-width: 280px; font-family: inherit; }
+.popup-form h3 { margin-bottom: 12px; font-size: 1.1rem; }
+.popup-form input, .popup-form textarea { width: 100%; border: 1px solid #ccc; border-radius: 8px; padding: 8px; margin-bottom: 8px; font-size: 0.9rem; }
+.leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.25); }

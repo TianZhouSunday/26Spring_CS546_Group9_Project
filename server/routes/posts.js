@@ -19,20 +19,20 @@ const router = Router();
 router.get('/', async (req, res) => {
     try {
         const { latitude, longitude, radius } = req.query;
-        
+
         if (latitude && longitude) {
             const lat = parseFloat(latitude);
             const lon = parseFloat(longitude);
             const rad = radius ? parseFloat(radius) : 0.01;
-            
+
             if (isNaN(lat) || isNaN(lon)) {
                 return res.status(400).json({ error: "Latitude and longitude must be valid numbers" });
             }
-            
+
             const postList = await getPostsByLocation(lat, lon, rad);
             return res.json(postList);
         }
-        
+
         const postList = await getAllPosts();
         res.json(postList);
     } catch (e) {
@@ -83,7 +83,7 @@ router.get('/:id/comments', async (req, res) => {
     } catch (e) {
         return res.status(400).json({ error: e.toString() });
     }
-    
+
     try {
         const commentList = await commentData.getAllComments(id);
         res.json(commentList);
@@ -103,17 +103,17 @@ router.post('/:id/rate', async (req, res) => {
     } catch (e) {
         return res.status(400).json({ error: e.toString() });
     }
-    
+
     if (!req.session.user) {
         return res.status(401).json({ error: 'You must be logged in to rate a post.' });
     }
-    
+
     const { rating } = req.body;
-    
+
     if (rating === undefined || rating === null) {
         return res.status(400).json({ error: 'Rating is required' });
     }
-    
+
     try {
         const result = await ratePost(id, req.session.user._id.toString(), rating);
         res.json(result);
@@ -159,13 +159,27 @@ router.post('/', async (req, res) => {
     if (!postDataBody || Object.keys(postDataBody).length === 0) {
         return res.status(400).json({ error: 'Request body must not be empty.' });
     }
-    const { title, body, photo, location, sensitive } = postDataBody;
+    let { title, body, photo, latitude, longitude, sensitive } = postDataBody;
     const userId = req.session.user._id.toString();
+
+    // Construct location object if individual fields are provided
+    let location;
+    if (latitude && longitude) {
+        location = {
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude)
+        };
+    } else if (postDataBody.location) {
+        location = postDataBody.location;
+    }
+
+    if (sensitive === 'on') sensitive = true;
+    else if (sensitive !== true) sensitive = false;
 
     // Try to create
     try {
         const newPost = await createPost(title, body, photo, location, sensitive, userId);
-        res.status(201).json(newPost);
+        res.redirect('/map');
     } catch (e) {
         // Error classification
         if (typeof e === 'string' && (e.includes("must be") || e.includes("length must"))) {

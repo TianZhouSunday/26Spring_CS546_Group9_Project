@@ -17,6 +17,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/public", express.static(path.join(__dirname, "../frontendstuff/public")));
+app.use("/public", express.static(path.join(__dirname, "../frontendstuff/views/layouts"))); // Serve CSS from layouts folder
 app.use("/src", express.static(path.join(__dirname, "../frontendstuff/src")));
 app.engine('handlebars', exphbs.engine({
   defaultLayout: "main",
