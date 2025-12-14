@@ -14,7 +14,6 @@ body {
 
 body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    /* Clean, professional font */
     color: #333;
     background-color: #f7f7f7;
     display: flex;
@@ -24,7 +23,6 @@ body {
 header {
     background-color: #ffffff;
     box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
-    /* Subtle border-like shadow */
     position: relative;
     z-index: 1000;
 }
@@ -34,16 +32,12 @@ nav {
     justify-content: space-between;
     align-items: center;
     height: 80px;
-    /* Fixed height header */
     padding: 0 24px;
-    /* Standard Airbnb-like padding */
     max-width: 100%;
-    /* Full width */
 }
 
 .nav-branding a {
     color: #ff385c;
-    /* Danger Red */
     font-weight: 800;
     font-size: 1.2rem;
     text-decoration: none;
@@ -94,7 +88,6 @@ nav {
 
 .button-primary {
     background-color: #ff385c;
-    /* Danger/Brand Red */
     color: white;
     border: none;
     padding: 10px 20px;
@@ -108,21 +101,18 @@ nav {
     background-color: #d9324e;
 }
 
-/* Main Content Area - Flexible */
+/* Main Content Area */
 main {
     flex: 1;
-    /* Fills the remaining vertical space */
     display: flex;
     flex-direction: column;
     width: 100%;
-    /* Removed max-width/padding default to allow map to touch edges */
 }
 
 /* Specific Page Containers (for non-map pages) */
 .container {
     max-width: 1100px;
     margin: 20px auto 0;
-    /* Add top margin */
     padding: 20px 24px;
     width: 100%;
 }
@@ -166,7 +156,6 @@ main {
     font-size: 1rem;
     transition: border-color 0.2s;
     background-color: white;
-    /* Ensure select has white bg */
 }
 
 .button-secondary {
@@ -190,7 +179,6 @@ main {
 .form-group input:focus {
     outline: none;
     border-color: #ff385c;
-    /* Brand color */
 }
 
 .auth-button {
@@ -206,7 +194,6 @@ main {
     margin-top: 5px;
     display: block;
     min-height: 20px;
-    /* Prevent layout shift */
 }
 
 .form-footer {
@@ -244,7 +231,6 @@ footer {
     position: relative;
     width: 100%;
     height: 100%;
-    /* Fallback */
     overflow: hidden;
     /* Prevent scrollbars on map view */
 }
@@ -373,10 +359,8 @@ footer {
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* Center everything */
     text-align: center;
     gap: 20px;
-    /* Space between elements */
 }
 
 .profile-container h1 {
@@ -674,6 +658,7 @@ footer {
         justify-content: center;
     }
 }
+
 .edit-profile-page {
     max-width: 600px;
     margin: 40px auto;
@@ -911,4 +896,185 @@ footer {
     margin: 0;
     cursor: pointer;
     font-weight: normal;
+}
+
+#map {
+    height: 600px;
+    width: 100%;
+    margin-top: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.popup-form {
+    min-width: 250px;
+}
+
+.popup-form input,
+.popup-form textarea {
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.legend {
+    background: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.legend i {
+    width: 18px;
+    height: 18px;
+    float: left;
+    margin-right: 8px;
+    opacity: 0.7;
+}
+
+/* Map Controls - Floating Sidebar Style (Layers & Heatmap) */
+.map-controls {
+    position: absolute;
+    top: 100px;
+    /* Moved up as filter is removed */
+    left: 10px;
+    z-index: 1000;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 250px;
+    max-height: 80vh;
+    /* Prevent overflow */
+    overflow-y: auto;
+    /* Scroll if needed */
+}
+
+/* Filter Bar - Horizontal Top Center */
+.filter-bar {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.filter-bar label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.filter-bar select,
+.filter-bar input[type="range"] {
+    cursor: pointer;
+}
+
+.map-controls label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.slider-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 5px 0;
+    border-top: 1px solid #eee;
+}
+
+.slider-container input[type="range"] {
+    width: 100%;
+}
+
+/* Heatmap gradient legend */
+.heatmap-gradient {
+    width: 120px;
+    height: 12px;
+    background: linear-gradient(to right, #0000ff, #00ffff, #00ff00, #ffff00, #ff0000);
+    border-radius: 3px;
+    margin: 5px 0;
+}
+
+.gradient-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75em;
+    color: #666;
+}
+
+/* Rating Buttons */
+.rating-btn {
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    background: #fff;
+    border: 2px solid #2b82cb;
+    color: #2b82cb;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rating-btn:hover {
+    background-color: #dbeafe;
+    transform: translateY(-1px);
+}
+
+.rating-btn.selected {
+    background-color: #2b82cb;
+    color: white;
+}
+
+.rating-section {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border: 2px solid #2b82cb;
+    border-radius: 8px;
+}
+
+.rating-section h3 {
+    margin: 0 0 10px 0;
+    color: #2b82cb;
+}
+
+.rating-section-text {
+    margin: 5px 0;
+    font-size: 16px;
+}
+
+.rating-section-subtext {
+    margin: 10px 0 15px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.rating-value {
+    font-size: 18px;
+    color: #2b82cb;
+}
+
+.rating-buttons-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
 }
