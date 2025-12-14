@@ -89,6 +89,11 @@ router.get("/edit-profile", async (req, res) => {
   if (!req.session.user) {
     return res.redirect("/login");
   }
+  res.render("edit-profile", {
+    title: "Edit Profile",
+    user: req.session.user
+  });
+});
   
 
 router.post("/edit-profile", upload.single('profile_picture'), async (req, res) => {
@@ -146,53 +151,6 @@ router.post("/edit-profile", upload.single('profile_picture'), async (req, res) 
     );
 
     req.session.user = updatedUser;
-
-    return res.redirect("/profile");
-
-  } catch (e) {
-    return res.status(400).render("edit-profile", {
-      title: "Edit Profile",
-      user: req.session.user,
-      error: e.message
-    });
-  }
-});
-
-  try {
-    const user = req.session.user;
-
-    const {
-      username,
-      email,
-      borough,
-      hideSensitiveContent
-    } = req.body;
-
-    // Default to existing profile picture
-    let profilePictureUrl = user.profile_picture || null;
-
-    // If a new file is uploaded, update the URL
-    if (req.file) {
-      profilePictureUrl = `/public/uploads/${req.file.filename}`;
-    }
-
-    const sensitivePref =
-      hideSensitiveContent === "on" || hideSensitiveContent === true;
-
-    await updateUser(
-      user._id.toString(),
-      username,
-      email,
-      borough,
-      profilePictureUrl,
-      sensitivePref
-    );
-
-    req.session.user.username = username.trim().toLowerCase();
-    req.session.user.email = email.trim().toLowerCase();
-    req.session.user.borough = borough;
-    req.session.user.profile_picture = profilePictureUrl;
-    req.session.user.hideSensitiveContent = sensitivePref;
 
     return res.redirect("/profile");
 
