@@ -3,6 +3,7 @@ import { createUser, checkUser, updateUser } from '../data/users.js';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fetch from 'node-fetch';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -88,17 +89,74 @@ router.get("/edit-profile", async (req, res) => {
   if (!req.session.user) {
     return res.redirect("/login");
   }
-
-  return res.render("edit-profile", {
-    title: "Edit Profile",
-    user: req.session.user
-  });
-});
+  
 
 router.post("/edit-profile", upload.single('profile_picture'), async (req, res) => {
   if (!req.session.user) {
     return res.redirect("/login");
   }
+  try {
+    const user = req.session.user;
+
+    const {
+      username,
+      email,
+      borough,
+      address,
+      notificationRadius,
+      notificationsEnabled,
+      hideSensitiveContent
+    } = req.body;
+
+    let profilePictureUrl = user.profile_picture || null;
+
+    if (req.file) {
+      profilePictureUrl = `/public/uploads/${req.file.filename}`;
+    }
+
+    const sensitivePref =
+      hideSensitiveContent === "on" || hideSensitiveContent === true;
+
+    let location = user.location || null;
+
+    // address → location
+    if (address && address.trim()) {
+      location = await geocodeAddress(address);
+
+      // NYC check
+      if (
+        location.longitude < -74.258 || location.longitude > -73.699 ||
+        location.latitude < 40.496 || location.latitude > 40.916
+      ) {
+        throw new Error("Address must be within NYC");
+      }
+    }
+
+    const updatedUser = await updateUser(
+      user._id.toString(),
+      username,
+      email,
+      borough,
+      profilePictureUrl,
+      sensitivePref,
+      address,
+      location,
+      notificationRadius ? Number(notificationRadius) : 1,
+      notificationsEnabled === "on"
+    );
+
+    req.session.user = updatedUser;
+
+    return res.redirect("/profile");
+
+  } catch (e) {
+    return res.status(400).render("edit-profile", {
+      title: "Edit Profile",
+      user: req.session.user,
+      error: e.message
+    });
+  }
+});
 
   try {
     const user = req.session.user;
@@ -159,5 +217,22 @@ router.get('/profile', (req, res) => {
     self: true
   });
 });
+const geocodeAddress = async (address) => {
+  const encoded = encodeURIComponent(address);
+  const url = `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`;
+
+  const response = await fetch(url, {
+    headers: { 'User-Agent': 'NYC-Danger-Map/1.0' }
+  });
+
+  const data = await response.json();
+  if (!data.length) throw new Error("Invalid address");
+
+  return {
+    latitude: parseFloat(data[0].lat),
+    longitude: parseFloat(data[0].lon)
+  };
+};
+
 
 export default router;

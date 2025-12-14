@@ -107,6 +107,10 @@ export const updateUser = async (
   email,
   borough,
   profile_picture,
+  address,
+  location, 
+  notificationRadius,
+  notificationsEnabled,
   hideSensitiveContent
 ) => {
   //validate input
@@ -166,7 +170,28 @@ export const updateUser = async (
   if (hideSensitiveContent !== undefined && hideSensitiveContent !== null && typeof hideSensitiveContent !== "boolean") {
     throw Error("updateUser: hideSensitiveContent must be a boolean");
   }
+   // address validation 
+   if (address !== undefined && address !== null && typeof address !== "string") {
+    throw new Error("updateUser: address must be a string");
+  }
 
+  // location validation 
+  if (location) {
+    if (
+      typeof location !== "object" ||
+      typeof location.latitude !== "number" ||
+      typeof location.longitude !== "number"
+    ) {
+      throw new Error("updateUser: location must contain latitude and longitude numbers");
+    }
+  }
+  if (notificationRadius !== undefined) {
+    const radiusNum = Number(notificationRadius);
+    if (isNaN(radiusNum) || radiusNum <= 0 || radiusNum > 25) {
+      throw Error("updateUser: notificationRadius must be between 0 and 25 miles");
+    }
+    notificationRadius = radiusNum;
+  }
 
   borough = borough.split(" ").map(word => word[0].toUpperCase() + word.slice(1)).join(" ");
   const updatedUser = {
@@ -176,11 +201,16 @@ export const updateUser = async (
     profile_picture: profile_picture,
     hideSensitiveContent: hideSensitiveContent
   };
+  if (address) updatedUser.address = address;
+  if (location) updatedUser.location = location;
+  if (notificationRadius !== undefined) updatedUser.notificationRadius = notificationRadius;
+  if (notificationsEnabled !== undefined) updatedUser.notificationsEnabled = notificationsEnabled;
 
   //perform update
   const updateRes = await userCollection.updateOne(
     { _id },
-    { $set: updatedUser }
+    { $set: updatedUser }, 
+    { returnDocument: "after" }
   );
 
   if (!updateRes.matchedCount) {
