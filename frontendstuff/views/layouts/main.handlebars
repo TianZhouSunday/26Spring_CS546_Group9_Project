@@ -24,7 +24,11 @@
                 <li><a href="/posts">Community Posts</a></li>
                 {{/equals}}
                 <li><a href="/profile">Profile</a></li>
-
+                <li class="nav-notification">
+                     <a href="/notifications">Notifications</a></li>
+                        <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                    </a>
+</li>
                 <li>
                     <form action="/logout" method="POST" class="inline-form">
                         <button type="submit" class="link-button">Logout</button>

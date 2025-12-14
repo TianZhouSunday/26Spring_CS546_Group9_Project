@@ -4,6 +4,7 @@ import reportsRoutes from './reports.js';
 import testRoute from './test.js';
 import webRoutes from './web.js';
 import userRoutes from './user_routes.js';
+import notificationsRoutes from './notifications-routes.js';
 
 const constructorMethod = (app) => {
   app.use('/test', testRoute);
@@ -12,6 +13,7 @@ const constructorMethod = (app) => {
   app.use('/user', userRoutes);
   app.use('/api/posts', postsRoutes);
   app.use('/reports', reportsRoutes);
+  app.use('/', notificationsRoutes);
   app.use('/', webRoutes);
 
   app.use(/(.*)/, (req, res) => {

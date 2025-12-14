@@ -1,0 +1,98 @@
+<div class="notifications-page">
+    <div class="notifications-header">
+        <h1>Notifications</h1>
+        {{#if notifications.length}}
+        <button class="mark-all-read" id="markAllRead">
+            Mark all as read
+        </button>
+        {{/if}}
+    </div>
+
+    {{#if notifications.length}}
+    <div class="notifications-list" id="notificationsList">
+        {{#each notifications}}
+        <div class="notification-card {{#unless read}}unread{{/unless}}" data-id="{{_id}}">
+            <div class="notification-icon">⚠️</div>
+            <div class="notification-content">
+                <div class="notification-title">
+                    <a href="/posts/{{postId}}">{{postTitle}}</a>
+                </div>
+                <div class="notification-meta">
+                    <span>This occured: {{distance}} miles away</span>
+                    <span>Time:  {{createdAt}}</span>
+                </div>
+            </div>
+            <div class="notification-actions">
+                <a href="/posts/{{postId}}" class="notification-btn notification-btn-view">View</a>
+                <button class="notification-btn notification-btn-dismiss" onclick="dismissNotification('{{_id}}')">
+                    Dismiss
+                </button>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div class="empty-state">
+        <div class="empty-state-icon"></div>
+        <h2>No notifications yet</h2>
+        <p>When incidents are reported near your location, you'll see them here.</p>
+        <p><a href="/edit-profile">Set your location</a> to start receiving alerts.</p>
+    </div>
+    {{/if}}
+</div>
+
+<script>
+    // Mark all as read
+    document.getElementById('markAllRead')?.addEventListener('click', async () => {
+        try {
+            const response = await fetch('/api/notifications/read-all', {
+                method: 'POST'
+            });
+            if (response.ok) {
+                document.querySelectorAll('.notification-card.unread').forEach(card => {
+                    card.classList.remove('unread');
+                });
+                updateNotificationBadge();
+            }
+        } catch (error) {
+            console.error('Error marking notifications as read:', error);
+        }
+    });
+
+    // Dismiss notification
+    async function dismissNotification(id) {
+        try {
+            const response = await fetch(`/api/notifications/${id}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                const card = document.querySelector(`[data-id="${id}"]`);
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(20px)';
+                setTimeout(() => card.remove(), 300);
+                updateNotificationBadge();
+            }
+        } catch (error) {
+            console.error('Error dismissing notification:', error);
+        }
+    }
+
+    // Update notification badge in nav (if exists)
+    async function updateNotificationBadge() {
+        try {
+            const response = await fetch('/api/notifications/count');
+            const data = await response.json();
+            const badge = document.getElementById('notificationBadge');
+            if (badge) {
+                if (data.count > 0) {
+                    badge.textContent = data.count;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        } catch (error) {
+            console.error('Error updating badge:', error);
+        }
+    }
+</script>
