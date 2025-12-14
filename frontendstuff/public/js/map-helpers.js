@@ -130,7 +130,7 @@ const MapHelpers = {
                 <strong style="font-size:12px;">Add a Comment:</strong>
                 <form id="comment-form-${postId}" style="margin-top:5px;">
                     <textarea name="text" rows="2" placeholder="Write your comment..." required style="width:100%; padding:5px; box-sizing:border-box; font-size:11px;"></textarea>
-                    
+                    <input type="number" name="score" min="0" max="5" value="3" required style="width:100%; padding:5px; margin-top:5px; box-sizing:border-box; font-size:11px;" placeholder="Comment Score (0-5)">
                     <button type="submit" style="width:100%; margin-top:5px; padding:5px; background:${color}; color:white; border:none; cursor:pointer; font-size:11px;">Post Comment</button>
                 </form>
             </div>
@@ -148,9 +148,16 @@ const MapHelpers = {
                     e.preventDefault();
                     const formData = new FormData(e.target);
                     const text = formData.get('text');
+                    const scoreStr = formData.get('score');
+                    const score = parseInt(scoreStr);
 
                     if (!text || text.trim().length === 0) {
                         alert('Please enter a comment');
+                        return;
+                    }
+
+                    if (isNaN(score) || score < 0 || score > 5) {
+                        alert('Please enter a valid score between 0 and 5');
                         return;
                     }
 
@@ -159,7 +166,7 @@ const MapHelpers = {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
-                        body: JSON.stringify({ text: text.trim() })
+                        body: JSON.stringify({ text: text.trim(), score: score })
                     })
                         .then(response => {
                             if (response.ok) {
@@ -190,7 +197,7 @@ const MapHelpers = {
                 <p style="font-size:12px; margin:5px 0;"><strong>Start Discussion:</strong></p>
                 <form id="create-discussion-${incidentId}" style="margin-top:5px;">
                     <textarea name="comment" rows="2" placeholder="Add your comment or context..." required style="width:100%; padding:5px; box-sizing:border-box; font-size:11px;"></textarea>
-                    
+                    <input type="number" name="score" min="0" max="5" value="3" required style="width:100%; padding:5px; margin-top:5px; box-sizing:border-box; font-size:11px;" placeholder="Comment Score (0-5)">
                     <button type="submit" style="width:100%; margin-top:5px; padding:5px; background:#cb2b3e; color:white; border:none; cursor:pointer; font-size:11px;">Create Discussion & Comment</button>
                 </form>
             </div>
@@ -208,9 +215,16 @@ const MapHelpers = {
                     e.preventDefault();
                     const formData = new FormData(e.target);
                     const comment = formData.get('comment');
+                    const scoreStr = formData.get('score');
+                    const score = parseInt(scoreStr);
 
                     if (!comment || comment.trim().length === 0) {
                         alert('Please enter a comment');
+                        return;
+                    }
+
+                    if (isNaN(score) || score < 0 || score > 5) {
+                        alert('Please enter a valid score between 0 and 5');
                         return;
                     }
 
@@ -240,7 +254,7 @@ const MapHelpers = {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 credentials: 'include',
-                                body: JSON.stringify({ text: comment.trim() })
+                                body: JSON.stringify({ text: comment.trim(), score: score })
                             });
                         })
                         .then(response => {
