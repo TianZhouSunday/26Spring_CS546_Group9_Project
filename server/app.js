@@ -34,6 +34,10 @@ app.engine('handlebars', exphbs.engine({
     },
     and(a, b) {
       return a && b;
+    },
+    formatRating(rating) {
+      if (!rating && rating !== 0) return '0.0';
+      return Number(rating).toFixed(1);
     }
   }
 }));

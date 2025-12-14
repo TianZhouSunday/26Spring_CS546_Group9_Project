@@ -11,13 +11,12 @@
             <!-- strong used for easy bolding/importance -->
             <p><strong>Posted:</strong> {{post.date}}</p>
             <p><strong>Location:</strong> {{post.location.latitude}}, {{post.location.longitude}}</p>
-            <p><strong>Score:</strong> {{post.post_score}}</p>
+            <p><strong>Usefulness Rating:</strong> {{formatRating post.post_score}}/5.0{{#if post.ratings}} ({{post.ratings.length}} {{#if (eq post.ratings.length 1)}}rating{{else}}ratings{{/if}}){{/if}}</p>
             {{#if post.anonymous}}
                 <p><strong>Posted Anonymously</strong>
             {{else}}
                 <p><strong>Posted by:</strong><a href="/user/{{post.user}}">{{user.username}}</a>
             {{/if}}
-            </p>
         </div>
 
         {{#if (and post.sensitive currentUser.hideSensitiveContent)}}
@@ -69,7 +68,7 @@
 
         <div class="rating-section" style="margin:20px 0; padding:20px; background:#f8f9fa; border:2px solid #2b82cb; border-radius:8px;">
             <h3 style="margin:0 0 10px 0; color:#2b82cb;">Rate This Incident</h3>
-            <p style="margin:5px 0; font-size:16px;">Usefulness Rating: <strong style="font-size:18px; color:#2b82cb;">{{#if post.post_score}}{{post.post_score.toFixed}}{{else}}0{{/if}}</strong>/5.0</p>
+            <p style="margin:5px 0; font-size:16px;">Usefulness Rating: <strong style="font-size:18px; color:#2b82cb;">{{formatRating post.post_score}}</strong>/5.0{{#if post.ratings}} <span style="font-size:14px; color:#666;">({{post.ratings.length}} {{#if (eq post.ratings.length 1)}}rating{{else}}ratings{{/if}})</span>{{/if}}</p>
             <p style="margin:10px 0 15px 0; color:#666; font-size:14px;">How useful is this incident report?</p>
             <div style="display:flex; gap:10px; margin-top:15px;">
                 <button onclick="ratePostPage('{{post._id}}', 1)" class="button" style="flex:1; padding:12px; font-size:16px; font-weight:bold; background:#fff; border:2px solid #2b82cb; color:#2b82cb; border-radius:5px; cursor:pointer;">1</button>
