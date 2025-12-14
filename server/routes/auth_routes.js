@@ -27,7 +27,7 @@ router.get('/', async (req, res) => {
   res.render("home");
 });
 
-//accoutn creation
+//account creation
 router.get('/signup', async (req, res) => {
   if (req.session.user) {
     return res.redirect("/profile");

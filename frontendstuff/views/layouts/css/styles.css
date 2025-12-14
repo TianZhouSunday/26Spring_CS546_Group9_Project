@@ -1099,3 +1099,48 @@ footer {
 .nav-icon {
     font-size: 1.2rem;
 }
+/* filter Bar Styles */
+.filter-bar {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+/*  map controls staying visible */
+.map-controls {
+    position: absolute;
+    top: 80px;
+    left: 10px;
+    z-index: 1001;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 250px;
+}
+
+#map-container {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 600px;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+    min-height: 600px;
+}
