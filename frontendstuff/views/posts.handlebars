@@ -1,6 +1,6 @@
 <div class="container">
     <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
-        <h1>My Posts</h1>
+        <h1>{{title}}</h1>
         <a href="/map" class="button-primary" style="text-decoration: none;">Create Post (Map)</a>
     </div>
 
@@ -35,8 +35,13 @@
     </div>
     {{else}}
     <div style="text-align: center; margin-top: 50px;">
-        <h3>No posts yet.</h3>
-        <p>Go to the <a href="/map">Map</a> to define the first danger zone!</p>
+        {{#equals title "Posts"}}
+            <h3>No posts yet.</h3>
+            <p>Go to the <a href="/map">Map</a> to define the first danger zone!</p>     
+        {{else}}
+            <h3>The archive is empty.</h3>
+            <p>View recent posts <a href="/posts">here.</a></p>    
+        {{/equals}}
     </div>
     {{/if}}
 </div>
