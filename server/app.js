@@ -80,8 +80,14 @@ function signout(req, res, next) {
 
 app.get("/login", loginRedirect);
 app.get("/register", registerRedirect);
-app.get("/", authenticateUser);
 app.get("/signout", signout);
+// homepage route 
+app.get("/", (req, res) => {
+  if (req.session.user) {
+    return res.redirect("/map");
+  }
+  res.render('home', { title: 'Welcome to NYC Danger Map' });
+});
 
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {

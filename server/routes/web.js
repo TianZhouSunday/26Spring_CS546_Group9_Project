@@ -9,7 +9,7 @@ const router = express.Router();
 // home site
 router.route('/').get(async (req, res) => {
   if (req.session.user) {
-    return res.redirect('/posts');
+    return res.redirect('/maps');
   }
   res.render('home', {
     title: 'NYC Danger Map: WS Group 9 Final Project'
