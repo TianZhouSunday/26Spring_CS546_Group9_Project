@@ -34,7 +34,7 @@ const MapHelpers = {
                 <p style="margin:3px 0; font-size:12px;"><strong>Boro:</strong> ${incident.boro}</p>
                 <p style="margin:3px 0; font-size:12px;"><strong>Location:</strong> ${incident.location_desc || 'Street'}</p>
                 <p style="margin:5px 0; font-size:10px; color:#666;"><small>Source: NYC Open Data</small></p>
-                ${ratingSection}
+                ${ratingSection ? ratingSection : ''}
                 ${commentsHtml ?
                 `<div style="margin-top:10px; padding-top:10px; border-top:1px solid #ccc;">
                         <p style="font-size:12px; margin:5px 0;"><strong>Community Discussion:</strong></p>
@@ -42,7 +42,24 @@ const MapHelpers = {
                     </div>`
                 : ''}
                 ${commentsHtml}
-                ${commentForm ? commentForm : createDiscussionForm}
+                ${commentForm ? commentForm : (createDiscussionForm || '')}
+            </div>
+        `;
+    },
+
+    /**
+     * Generates simple preview HTML for NYC Incident (Loading state)
+     */
+    generateIncidentPreviewHtml: function (incident) {
+        return `
+            <div class="incident-preview" style="max-width:300px;">
+                <h3 style="color: #d32f2f; margin:0 0 10px 0; font-size:16px;">NYC Shooting Incident</h3>
+                <p style="margin:3px 0; font-size:12px;"><strong>Date:</strong> ${incident.occur_date}</p>
+                <p style="margin:3px 0; font-size:12px;"><strong>Time:</strong> ${incident.occur_time}</p>
+                <p style="margin:3px 0; font-size:12px;"><strong>Boro:</strong> ${incident.boro}</p>
+                <p style="margin:3px 0; font-size:12px;"><strong>Location:</strong> ${incident.location_desc || 'Street'}</p>
+                <p style="margin:5px 0; font-size:10px; color:#666;"><small>Source: NYC Open Data</small></p>
+                <p style="font-style:italic; color:#666; font-size:12px; margin-top:10px;">Loading discussion...</p>
             </div>
         `;
     },
@@ -239,5 +256,68 @@ const MapHelpers = {
                 });
             }
         }, 100);
+    },
+
+    /**
+     * Generate Main Report Form HTML
+     */
+    generateReportFormHtml: function (lat, lng) {
+        return `
+            <div class="popup-form">
+                <h3>Report Incident Here</h3>
+                <form action="/posts" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="latitude" value="${lat}">
+                    <input type="hidden" name="longitude" value="${lng}">
+                    
+                    <label>Title:</label>
+                    <input type="text" name="title" required placeholder="Short title...">
+                    
+                    <label>Borough:</label>
+                    <select name="borough" required style="width: 100%; margin-bottom: 8px; padding: 5px;">
+                        <option value="Manhattan">Manhattan</option>
+                        <option value="Brooklyn">Brooklyn</option>
+                        <option value="Queens">Queens</option>
+                        <option value="The Bronx">The Bronx</option>
+                        <option value="Staten Island">Staten Island</option>
+                    </select>
+                    
+                    <label>Description:</label>
+                    <textarea name="body" rows="3" placeholder="What happened?"></textarea>
+                    
+                    <label>Photo (Optional):</label>
+                    <input type="file" name="photo" accept="image/*">
+                    
+                    <label>
+                        <input type="checkbox" name="sensitive"> 
+                        Contains Sensitive Content?
+                    </label>
+                    
+                    <label>
+                        <input type="checkbox" name="anonymous">
+                        Post Anonymously
+                    </label>
+
+                    <button type="submit" class="button-primary" style="width:100%; margin-top:5px;">Create Post</button>
+                </form>
+            </div>
+        `;
+    },
+
+    /**
+     * Generate Legend HTML
+     */
+    generateLegendHtml: function () {
+        return `
+            <strong>Legend</strong><br>
+            <i style="background: #2b82cb"></i> Community Posts<br>
+            <i style="background: #cb2b3e"></i> NYC Shooting Data<br>
+            <br>
+            <strong>Heatmap Intensity</strong>
+            <div class="heatmap-gradient"></div>
+            <div class="gradient-labels">
+                <span>Low</span>
+                <span>High</span>
+            </div>
+        `;
     }
 };
