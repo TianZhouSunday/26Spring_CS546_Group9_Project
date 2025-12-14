@@ -1,6 +1,6 @@
 // help from my lab 8 code 
 import express from 'express';
-import { createUser, checkUser } from '../data/users.js';
+import { createUser, checkUser, getUserById } from '../data/users.js';
 import { getAllPosts, getPostById, createPost, deletePost } from '../data/posts.js';
 import helper from '../data/helpers.js';
 
@@ -111,6 +111,13 @@ router.route('/posts').get(async (req, res) => {
 
   try {
     let postList = await getAllPosts();
+
+    //filter out posts made by blocked users
+    const blockedUsers = (req.session.user.blocked_users || []).map(String);
+    postList = postList.filter(post => {
+      return !blockedUsers.includes(post.user.toString());
+    });
+
     res.render('posts', {
       title: 'Posts',
       posts: postList
@@ -197,10 +204,13 @@ router.route('/posts/:id').get(async (req, res) => {
     let post = await getPostById(id);
     let comments = []; // comments
 
+    let user = await getUserById(post.user);
+
     res.render('post', {
       title: post.title,
       post: post,
-      comments: comments
+      comments: comments,
+      user: user
     });
   } catch (error) {
     return res.status(404).render('error', {

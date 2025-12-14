@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import { users } from '../config/mongoCollections.js';
 import isEmail from 'validator/lib/isEmail.js';
 import { ObjectId } from "mongodb";
+import { closeConnection } from "../config/mongoConnection.js";
 
 const SALT_ROUNDS = 16;
 
@@ -227,7 +228,7 @@ export const getUserById = async (id) => {
     throw Error("getUserById: no user found with id " + id);
   }
   user._id = user._id.toString();
-  return movie;
+  return user;
 }
 
 export const blockUser = async (block_id, user_id) => {
@@ -258,6 +259,48 @@ export const blockUser = async (block_id, user_id) => {
 
   //convert id to a string
   updatedInfo._id = updatedInfo._id.toString();
+  delete updatedInfo.password;
+  return updatedInfo;
+}
+
+export const unblockUser = async (block_id, user_id) => {
+  if (!checkString(block_id) || !checkString(user_id)) {
+    throw Error("unblockUser: inputs must be nonempty strings.");
+  }
+
+  block_id = block_id.trim();
+  user_id = user_id.trim();
+
+  if (!ObjectId.isValid(block_id) || !ObjectId.isValid(user_id)) {
+    throw Error("unblockUser: inputs must be valid object IDs.");
+  }
+
+  //connect to database and find corresponding users
+  const userCollection = await users();
+  let user = await userCollection.findOne({
+    _id: ObjectId.createFromHexString(user_id)
+  });
+
+  let blocked_user = await userCollection.findOne({
+    _id: ObjectId.createFromHexString(block_id)
+  });
+
+  if (!user || !blocked_user) {
+    throw Error("unblockUser: one or more users not found");
+  }
+
+  let updatedInfo = await userCollection.findOneAndUpdate(
+    { _id: ObjectId.createFromHexString(user_id) },
+    { $pull: { blocked_users: block_id } },
+    { returnDocument: "after" }
+  );
+
+  if (!updatedInfo) {
+    throw Error("unblockUser: failed to unblock user");
+  }
+
+  updatedInfo._id = updatedInfo._id.toString();
+  delete updatedInfo.password;
   return updatedInfo;
 }
 
