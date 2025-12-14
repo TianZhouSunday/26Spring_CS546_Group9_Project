@@ -12,8 +12,11 @@
             <p><strong>Posted:</strong> {{post.date}}</p>
             <p><strong>Location:</strong> {{post.location.latitude}}, {{post.location.longitude}}</p>
             <p><strong>Usefulness Rating:</strong> {{formatRating post.post_score}}/5.0{{#if post.ratings}} ({{post.ratings.length}} {{#if (eq post.ratings.length 1)}}rating{{else}}ratings{{/if}}){{/if}}</p>
-            <p><strong>Posted by:</strong><a href="/user/{{post.user}}">{{user.username}}</a>
-            </p>
+            {{#if post.anonymous}}
+                <p><strong>Posted Anonymously</strong>
+            {{else}}
+                <p><strong>Posted by:</strong><a href="/user/{{post.user}}">{{user.username}}</a>
+            {{/if}}
         </div>
 
         {{#if (and post.sensitive currentUser.hideSensitiveContent)}}

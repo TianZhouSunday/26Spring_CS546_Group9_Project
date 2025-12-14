@@ -16,7 +16,11 @@
             <ul class="nav-links">
                 
                 <li><a href="/map">Safety Map</a></li>
-                <li><a href="/posts">My Posts</a></li>
+                {{#equals title "Posts"}}
+                    <li><a href="/posts/archive">Posts Archive</a></li>          
+                {{else}}
+                    <li><a href="/posts">Posts</a></li>
+                {{/equals}}
                 <li><a href="/profile">Profile</a></li>
                 
                 <li>
