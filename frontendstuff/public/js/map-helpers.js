@@ -34,7 +34,7 @@ const MapHelpers = {
                 <p style="margin:3px 0; font-size:12px;"><strong>Boro:</strong> ${incident.boro}</p>
                 <p style="margin:3px 0; font-size:12px;"><strong>Location:</strong> ${incident.location_desc || 'Street'}</p>
                 <p style="margin:5px 0; font-size:10px; color:#666;"><small>Source: NYC Open Data</small></p>
-                ${ratingSection}
+                ${ratingSection ? ratingSection : ''}
                 ${commentsHtml ?
                 `<div style="margin-top:10px; padding-top:10px; border-top:1px solid #ccc;">
                         <p style="font-size:12px; margin:5px 0;"><strong>Community Discussion:</strong></p>
@@ -42,7 +42,24 @@ const MapHelpers = {
                     </div>`
                 : ''}
                 ${commentsHtml}
-                ${commentForm ? commentForm : createDiscussionForm}
+                ${commentForm ? commentForm : (createDiscussionForm || '')}
+            </div>
+        `;
+    },
+
+    /**
+     * Generates simple preview HTML for NYC Incident (Loading state)
+     */
+    generateIncidentPreviewHtml: function (incident) {
+        return `
+            <div class="incident-preview" style="max-width:300px;">
+                <h3 style="color: #d32f2f; margin:0 0 10px 0; font-size:16px;">NYC Shooting Incident</h3>
+                <p style="margin:3px 0; font-size:12px;"><strong>Date:</strong> ${incident.occur_date}</p>
+                <p style="margin:3px 0; font-size:12px;"><strong>Time:</strong> ${incident.occur_time}</p>
+                <p style="margin:3px 0; font-size:12px;"><strong>Boro:</strong> ${incident.boro}</p>
+                <p style="margin:3px 0; font-size:12px;"><strong>Location:</strong> ${incident.location_desc || 'Street'}</p>
+                <p style="margin:5px 0; font-size:10px; color:#666;"><small>Source: NYC Open Data</small></p>
+                <p style="font-style:italic; color:#666; font-size:12px; margin-top:10px;">Loading discussion...</p>
             </div>
         `;
     },
@@ -113,7 +130,7 @@ const MapHelpers = {
                 <strong style="font-size:12px;">Add a Comment:</strong>
                 <form id="comment-form-${postId}" style="margin-top:5px;">
                     <textarea name="text" rows="2" placeholder="Write your comment..." required style="width:100%; padding:5px; box-sizing:border-box; font-size:11px;"></textarea>
-                    
+                    <input type="number" name="score" min="0" max="5" value="3" required style="width:100%; padding:5px; margin-top:5px; box-sizing:border-box; font-size:11px;" placeholder="Comment Score (0-5)">
                     <button type="submit" style="width:100%; margin-top:5px; padding:5px; background:${color}; color:white; border:none; cursor:pointer; font-size:11px;">Post Comment</button>
                 </form>
             </div>
@@ -131,9 +148,16 @@ const MapHelpers = {
                     e.preventDefault();
                     const formData = new FormData(e.target);
                     const text = formData.get('text');
+                    const scoreStr = formData.get('score');
+                    const score = parseInt(scoreStr);
 
                     if (!text || text.trim().length === 0) {
                         alert('Please enter a comment');
+                        return;
+                    }
+
+                    if (isNaN(score) || score < 0 || score > 5) {
+                        alert('Please enter a valid score between 0 and 5');
                         return;
                     }
 
@@ -142,7 +166,7 @@ const MapHelpers = {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
-                        body: JSON.stringify({ text: text.trim() })
+                        body: JSON.stringify({ text: text.trim(), score: score })
                     })
                         .then(response => {
                             if (response.ok) {
@@ -173,7 +197,7 @@ const MapHelpers = {
                 <p style="font-size:12px; margin:5px 0;"><strong>Start Discussion:</strong></p>
                 <form id="create-discussion-${incidentId}" style="margin-top:5px;">
                     <textarea name="comment" rows="2" placeholder="Add your comment or context..." required style="width:100%; padding:5px; box-sizing:border-box; font-size:11px;"></textarea>
-                    
+                    <input type="number" name="score" min="0" max="5" value="3" required style="width:100%; padding:5px; margin-top:5px; box-sizing:border-box; font-size:11px;" placeholder="Comment Score (0-5)">
                     <button type="submit" style="width:100%; margin-top:5px; padding:5px; background:#cb2b3e; color:white; border:none; cursor:pointer; font-size:11px;">Create Discussion & Comment</button>
                 </form>
             </div>
@@ -191,9 +215,16 @@ const MapHelpers = {
                     e.preventDefault();
                     const formData = new FormData(e.target);
                     const comment = formData.get('comment');
+                    const scoreStr = formData.get('score');
+                    const score = parseInt(scoreStr);
 
                     if (!comment || comment.trim().length === 0) {
                         alert('Please enter a comment');
+                        return;
+                    }
+
+                    if (isNaN(score) || score < 0 || score > 5) {
+                        alert('Please enter a valid score between 0 and 5');
                         return;
                     }
 
@@ -223,7 +254,7 @@ const MapHelpers = {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 credentials: 'include',
-                                body: JSON.stringify({ text: comment.trim() })
+                                body: JSON.stringify({ text: comment.trim(), score: score })
                             });
                         })
                         .then(response => {
@@ -239,5 +270,68 @@ const MapHelpers = {
                 });
             }
         }, 100);
+    },
+
+    /**
+     * Generate Main Report Form HTML
+     */
+    generateReportFormHtml: function (lat, lng) {
+        return `
+            <div class="popup-form">
+                <h3>Report Incident Here</h3>
+                <form action="/posts" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="latitude" value="${lat}">
+                    <input type="hidden" name="longitude" value="${lng}">
+                    
+                    <label>Title:</label>
+                    <input type="text" name="title" required placeholder="Short title...">
+                    
+                    <label>Borough:</label>
+                    <select name="borough" required style="width: 100%; margin-bottom: 8px; padding: 5px;">
+                        <option value="Manhattan">Manhattan</option>
+                        <option value="Brooklyn">Brooklyn</option>
+                        <option value="Queens">Queens</option>
+                        <option value="The Bronx">The Bronx</option>
+                        <option value="Staten Island">Staten Island</option>
+                    </select>
+                    
+                    <label>Description:</label>
+                    <textarea name="body" rows="3" placeholder="What happened?"></textarea>
+                    
+                    <label>Photo (Optional):</label>
+                    <input type="file" name="photo" accept="image/*">
+                    
+                    <label>
+                        <input type="checkbox" name="sensitive"> 
+                        Contains Sensitive Content?
+                    </label>
+                    
+                    <label>
+                        <input type="checkbox" name="anonymous">
+                        Post Anonymously
+                    </label>
+
+                    <button type="submit" class="button-primary" style="width:100%; margin-top:5px;">Create Post</button>
+                </form>
+            </div>
+        `;
+    },
+
+    /**
+     * Generate Legend HTML
+     */
+    generateLegendHtml: function () {
+        return `
+            <strong>Legend</strong><br>
+            <i style="background: #2b82cb"></i> Community Posts<br>
+            <i style="background: #cb2b3e"></i> NYC Shooting Data<br>
+            <br>
+            <strong>Heatmap Intensity</strong>
+            <div class="heatmap-gradient"></div>
+            <div class="gradient-labels">
+                <span>Low</span>
+                <span>High</span>
+            </div>
+        `;
     }
 };
