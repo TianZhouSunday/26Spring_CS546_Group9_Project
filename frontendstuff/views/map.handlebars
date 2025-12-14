@@ -77,126 +77,143 @@
 
 <script src="/public/js/map-init.js"></script>
 
+<script>
 function deleteMapComment(postId, commentId, refreshPostId) {
-if (!confirm('Are you sure you want to delete this comment?')) {
-return;
-}
+    if (!confirm('Are you sure you want to delete this comment?')) {
+        return;
+    }
 
-fetch(`/api/posts/${postId}/comments/${commentId}`, {
-method: 'DELETE',
-credentials: 'include'
-})
-.then(response => {
-if (response.ok) {
-const commentElement = document.getElementById(`comment-${commentId}`);
-if (commentElement) {
-commentElement.remove();
-}
-if (window.map) {
-const allMarkers = [];
-window.map.eachLayer(layer => {
-if (layer instanceof L.Marker && layer.isPopupOpen()) {
-allMarkers.push(layer);
-}
-});
-if (allMarkers.length > 0) {
-const openMarker = allMarkers[0];
-openMarker.fire('popupopen');
-}
-}
-} else {
-return response.json().then(data => {
-alert('Error: ' + (data.error || 'Failed to delete comment'));
-});
-}
-})
-.catch(err => {
-alert('Error deleting comment: ' + err.message);
-console.error(err);
-});
+    fetch(`/api/posts/${postId}/comments/${commentId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+    })
+    .then(response => {
+        if (response.ok) {
+            const commentElement = document.getElementById(`comment-${commentId}`);
+            if (commentElement) {
+                commentElement.remove();
+            }
+            if (window.map) {
+                const allMarkers = [];
+                window.map.eachLayer(layer => {
+                    if (layer instanceof L.Marker && layer.isPopupOpen()) {
+                        allMarkers.push(layer);
+                    }
+                });
+                if (allMarkers.length > 0) {
+                    const openMarker = allMarkers[0];
+                    openMarker.fire('popupopen');
+                }
+            }
+        } else {
+            return response.json().then(data => {
+                alert('Error: ' + (data.error || 'Failed to delete comment'));
+            });
+        }
+    })
+    .catch(err => {
+        alert('Error deleting comment: ' + err.message);
+        console.error(err);
+    });
 }
 
 window.ratePost = function (postId, rating, refreshPostId) {
-const avgRatingElement = document.getElementById(`map-avg-rating-${refreshPostId || postId}`);
-if (!avgRatingElement) {
-console.error('Rating element not found:', `map-avg-rating-${refreshPostId || postId}`);
-}
+    const avgRatingElement = document.getElementById(`map-avg-rating-${refreshPostId || postId}`);
+    if (!avgRatingElement) {
+        console.error('Rating element not found:', `map-avg-rating-${refreshPostId || postId}`);
+    }
 
-return fetch(`/api/posts/${postId}/rate`, {
-method: 'POST',
-headers: {
-'Content-Type': 'application/json'
-},
-credentials: 'include',
-body: JSON.stringify({ rating: rating })
-})
-.then(response => {
-if (response.ok) {
-return response.json().then(data => {
-if (avgRatingElement) {
-avgRatingElement.textContent = data.averageRating.toFixed(1);
-} else {
-const retryElement = document.getElementById(`map-avg-rating-${refreshPostId || postId}`);
-if (retryElement) {
-retryElement.textContent = data.averageRating.toFixed(1);
-}
-}
-return data;
-});
-} else {
-return response.json().then(data => {
-throw new Error(data.error || 'Failed to rate post');
-});
-}
-})
-.catch(err => {
-alert('Error rating post: ' + err.message);
-console.error(err);
-throw err;
-});
+    return fetch(`/api/posts/${postId}/rate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ rating: rating })
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json().then(data => {
+                if (avgRatingElement) {
+                    avgRatingElement.textContent = data.averageRating.toFixed(1);
+                } else {
+                    const retryElement = document.getElementById(`map-avg-rating-${refreshPostId || postId}`);
+                    if (retryElement) {
+                        retryElement.textContent = data.averageRating.toFixed(1);
+                    }
+                }
+                return data;
+            });
+        } else {
+            return response.json().then(data => {
+                throw new Error(data.error || 'Failed to rate post');
+            });
+        }
+    })
+    .catch(err => {
+        alert('Error rating post: ' + err.message);
+        console.error(err);
+        throw err;
+    });
 };
 
 window.rateNYCIncident = function (incidentId, rating, lat, lng, occurDate, boro, occurTime, locationDesc) {
-fetch(`/api/posts?latitude=${lat}&longitude=${lng}&radius=0.001`, { credentials: 'include' })
-.then(response => response.json())
-.then(posts => {
-let discussionPost = posts.find(p =>
-p.title && p.title.includes('NYC Shooting Incident') &&
-Math.abs(p.location.latitude - lat) < 0.0001 && Math.abs(p.location.longitude - lng) < 0.0001 ); if (!discussionPost) {
-    const title=`NYC Shooting Incident - ${occurDate} - ${boro}`; const body=`Official NYC Shooting Incident\n\nDate:
-    ${occurDate}\nTime: ${occurTime}\nBorough: ${boro}\nLocation: ${locationDesc}`; return fetch('/api/posts', {
-    method: 'POST' , headers: { 'Content-Type' : 'application/json' }, credentials: 'include' , body: JSON.stringify({
-    title: title, body: body, location: { latitude: lat, longitude: lng }, photo: null, sensitive: false }) })
-    .then(response=> {
-    if (response.ok) {
-    return response.json();
-    } else {
-    return response.json().then(data => {
-    throw new Error(data.error || 'Failed to create discussion');
-    });
-    }
-    })
-    .then(post => {
-    discussionPost = post;
-    return window.ratePost(post._id, rating, post._id).then(() => {
-    if (window.map) {
-    window.map.eachLayer(layer => {
-    if (layer instanceof L.Marker && layer.isPopupOpen()) {
-    const popupContent = layer.getPopup().getContent();
-    if (popupContent && popupContent.includes(incidentId)) {
-    layer.fire('popupopen');
-    }
-    }
-    });
-    }
-    });
-    });
-    } else {
-    return window.ratePost(discussionPost._id, rating, discussionPost._id);
-    }
-    })
-    .catch(err => {
-    alert('Error rating incident: ' + err.message);
-    console.error(err);
-    });
-    };
+    return fetch(`/api/posts?latitude=${lat}&longitude=${lng}&radius=0.001`, { credentials: 'include' })
+        .then(response => response.json())
+        .then(posts => {
+            let discussionPost = posts.find(p =>
+                p.title && p.title.includes('NYC Shooting Incident') &&
+                Math.abs(p.location.latitude - lat) < 0.0001 &&
+                Math.abs(p.location.longitude - lng) < 0.0001
+            );
+
+            if (!discussionPost) {
+                const title = `NYC Shooting Incident - ${occurDate} - ${boro}`;
+                const body = `Official NYC Shooting Incident\n\nDate: ${occurDate}\nTime: ${occurTime}\nBorough: ${boro}\nLocation: ${locationDesc}`;
+                return fetch('/api/posts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        title: title,
+                        body: body,
+                        location: { latitude: lat, longitude: lng },
+                        photo: null,
+                        sensitive: false
+                    })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        return response.json().then(data => {
+                            throw new Error(data.error || 'Failed to create discussion');
+                        });
+                    }
+                })
+                .then(post => {
+                    discussionPost = post;
+                    return window.ratePost(post._id, rating, post._id).then(() => {
+                        if (window.map) {
+                            window.map.eachLayer(layer => {
+                                if (layer instanceof L.Marker && layer.isPopupOpen()) {
+                                    const popupContent = layer.getPopup().getContent();
+                                    if (popupContent && popupContent.includes(incidentId)) {
+                                        layer.fire('popupopen');
+                                    }
+                                }
+                            });
+                        }
+                    });
+                });
+            } else {
+                return window.ratePost(discussionPost._id, rating, discussionPost._id);
+            }
+        })
+        .catch(err => {
+            alert('Error rating incident: ' + err.message);
+            console.error(err);
+            throw err;
+        });
+};
+</script>
