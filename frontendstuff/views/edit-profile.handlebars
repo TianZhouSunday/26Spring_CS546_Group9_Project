@@ -54,6 +54,51 @@
             <label for="hideSensitiveContent" style="margin: 0; font-weight: normal; cursor: pointer;">Hide Sensitive
                 Content</label>
         </div>
+        <!--location & notifcation section -->
+        <div class="section-divider">
+            <p>Set your location to receive alerts when incidents are reported near you. Click on the map or use your current location.</p>
+
+            <div class="location-section">
+                <div id="location-map"></div>
+                
+                <div class="location-inputs">
+                    <input type="text" id="latitude" name="latitude" placeholder="Latitude" 
+                        value="{{user.location.latitude}}" readonly>
+                    <input type="text" id="longitude" name="longitude" placeholder="Longitude" 
+                        value="{{user.location.longitude}}" readonly>
+                </div>
+
+                <div class="location-buttons">
+                    <button type="button" class="location-btn location-btn-primary" id="useCurrentLocation">
+                        Use My Current Location
+                    </button>
+                    <button type="button" class="location-btn location-btn-secondary" id="clearLocation">
+                        Clear Location
+                    </button>
+                </div>
+
+                <div id="locationStatus" class="location-status" style="display: none;"></div>
+            </div>
+
+            <div class="notification-settings">
+                <div class="edit-profile-field">
+                    <label for="notificationRadius">Radius for alerts</label>
+                    <select id="notificationRadius" name="notificationRadius">
+                        <option value="0.25" {{#equals user.notificationRadius "0.25"}}selected{{/equals}}>0.25 miles (1-2 blocks)</option>
+                        <option value="0.5" {{#equals user.notificationRadius "0.5"}}selected{{/equals}}>0.5 miles (5-6 blocks)</option>
+                        <option value="1" {{#equals user.notificationRadius "1"}}selected{{/equals}}>1 mile (default)</option>
+                        <option value="2" {{#equals user.notificationRadius "2"}}selected{{/equals}}>2 miles</option>
+                        <option value="5" {{#equals user.notificationRadius "5"}}selected{{/equals}}>5 miles</option>
+                    </select>
+                </div>
+
+                <div class="checkbox-card">
+                    <input type="checkbox" id="notificationsEnabled" name="notificationsEnabled"
+                        {{#if user.notificationsEnabled}}checked{{/if}}>
+                    <label for="notificationsEnabled">🔔 Enable incident notifications near my location</label>
+                </div>
+            </div>
+        </div>
 
         <!-- submit/cancel options -->
         <div class="form-actions" style="display: flex; gap: 10px; margin-top: 20px;">

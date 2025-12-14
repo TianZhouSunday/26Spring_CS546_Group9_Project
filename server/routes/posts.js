@@ -159,7 +159,7 @@ router.post('/', async (req, res) => {
     if (!postDataBody || Object.keys(postDataBody).length === 0) {
         return res.status(400).json({ error: 'Request body must not be empty.' });
     }
-    let { title, body, photo, latitude, longitude, sensitive } = postDataBody;
+    let { title, body, photo, latitude, longitude, borough, sensitive, anonymous } = postDataBody;
     const userId = req.session.user._id.toString();
 
     // Construct location object if individual fields are provided
@@ -176,12 +176,13 @@ router.post('/', async (req, res) => {
     if (sensitive === 'on') sensitive = true;
     else if (sensitive !== true) sensitive = false;
 
+    if (anonymous === 'on') anonymous = true;
+    else if (anonymous !== true) anonymous = false;
+
     // Try to create
     try {
-        // const newPost = await createPost(title, body, photo, location, sensitive, userId);
-        // res.status(201).json(newPost);
-        await createPost(title, body, photo, location, sensitive, userId);
-        res.redirect('/posts');
+        const newPost = await createPost(title, body, photo, location, borough, sensitive, userId, anonymous);
+        return res.status(201).redirect(`/posts/${newPost._id.toString()}`);
     } catch (e) {
         // Error classification
         if (typeof e === 'string' && (e.includes("must be") || e.includes("length must"))) {

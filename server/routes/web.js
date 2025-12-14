@@ -136,10 +136,17 @@ router.route('/posts').get(async (req, res) => {
 
     let postList = await getAllPosts(filter);
 
-    //filter out posts made by blocked users
+    //filter out posts made by blocked users and posts earlier than a week old
     const blockedUsers = (req.session.user.blocked_users || []).map(String);
+    const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+
     postList = postList.filter(post => {
-      return !blockedUsers.includes(post.user.toString());
+      const postDate = new Date(post.date).getTime();
+
+      return (
+        postDate >= oneWeekAgo &&
+        !blockedUsers.includes(post.user.toString())
+      );
     });
 
     res.render('posts', {
@@ -153,6 +160,39 @@ router.route('/posts').get(async (req, res) => {
     return res.status(500).render('error', {
       title: 'Error',
       error: 'Error: Failed to load posts'
+    });
+  }
+});
+
+router.route('/posts/archive').get(async (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+
+  try {
+    let postList = await getAllPosts();
+
+    //filter out posts made by blocked users and posts from the last week
+    const blockedUsers = (req.session.user.blocked_users || []).map(String);
+    const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+
+    postList = postList.filter(post => {
+      const postDate = new Date(post.date).getTime();
+
+      return (
+        postDate < oneWeekAgo &&
+        !blockedUsers.includes(post.user.toString())
+      );
+    });
+
+    res.render('posts', {
+      title: 'Posts Archive',
+      posts: postList
+    });
+  } catch (error) {
+    return res.status(500).render('error', {
+      title: 'Error',
+      error: 'Error: Failed to load post archive.'
     });
   }
 });
@@ -178,6 +218,7 @@ router.route('/posts').post(upload.single('photo'), async (req, res) => {
   let latitude = req.body.latitude;
   let sensitive = req.body.sensitive;
   let borough = req.body.borough;
+  let anonymous = (req.body.anonymous === 'on');
 
   if (!title || !longitude || !latitude) {
     try {
@@ -204,7 +245,7 @@ router.route('/posts').post(upload.single('photo'), async (req, res) => {
   let userId = req.session.user._id.toString();
 
   try {
-    await createPost(title, body, photo, location, borough, isSensitive, userId);
+    await createPost(title, body, photo, location, borough, isSensitive, userId, anonymous);
     // Redirect logic: if created from map (which typically might be referred), 
     // we could check referer, but for now redirecting to posts list is standard behavior in this app
     res.redirect('/posts');

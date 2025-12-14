@@ -8,7 +8,7 @@ import { ObjectId } from "mongodb";
  * Required fields: title, body(optional), photo(optional), location, sensitive, user.
  * Initialize all other fields in the schema
  */
-export const createPost = async (title, body, photo, location, borough, sensitive, user) => {
+export const createPost = async (title, body, photo, location, borough, sensitive, user, anonymous) => {
     //check validation
     //check title
     title = helper.AvailableString(title, 'title');
@@ -47,6 +47,10 @@ export const createPost = async (title, body, photo, location, borough, sensitiv
     //check user
     user = helper.AvailableString(user, 'user ID');
 
+    // check anonymous
+    if (typeof anonymous !== 'boolean') {
+        throw "anonymous must be a boolean.";
+    }
 
     //create new post
     const newPost = {
@@ -62,6 +66,7 @@ export const createPost = async (title, body, photo, location, borough, sensitiv
         sensitive: sensitive,
         post_score: null,
         user: user,
+        anonymous: anonymous,
         comments: [],
         reports: [],
         ratings: [],
