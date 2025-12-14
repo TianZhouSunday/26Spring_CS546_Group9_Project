@@ -115,11 +115,9 @@ export const notifyNearbyUsers = async (postId, postTitle, postAddress, radiusMi
         postLng = coords.longitude;
     } catch (error) {
         console.error("Geocoding failed for post address:", error);
-        // If geocoding fails, we cannot proceed with distance calculation.
         return []; 
     }
     
-    // ****
 
     const users = await getUsersCollection();
 

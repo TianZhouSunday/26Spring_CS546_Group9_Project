@@ -159,19 +159,8 @@ router.post('/', async (req, res) => {
     if (!postDataBody || Object.keys(postDataBody).length === 0) {
         return res.status(400).json({ error: 'Request body must not be empty.' });
     }
-    let { title, body, photo, latitude, longitude, borough, sensitive, anonymous } = postDataBody;
+    let { title, body, photo, address, borough, sensitive, anonymous } = postDataBody;
     const userId = req.session.user._id.toString();
-
-    // Construct location object if individual fields are provided
-    let location;
-    if (latitude && longitude) {
-        location = {
-            latitude: parseFloat(latitude),
-            longitude: parseFloat(longitude)
-        };
-    } else if (postDataBody.location) {
-        location = postDataBody.location;
-    }
 
     if (sensitive === 'on') sensitive = true;
     else if (sensitive !== true) sensitive = false;
