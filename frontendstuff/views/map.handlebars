@@ -266,10 +266,12 @@
 
                                     const sensitiveWarning = post.sensitive ? '<p style="color:red;font-weight:bold; font-size:12px;">Sensitive Content</p>' : '';
                                     const avgRating = post.post_score ? post.post_score.toFixed(1) : '0.0';
+                                    const ratingCount = post.ratings && post.ratings.length > 0 ? post.ratings.length : 0;
+                                    const ratingCountText = ratingCount > 0 ? ` <span style="font-size:11px; color:#999;">(${ratingCount} ${ratingCount === 1 ? 'rating' : 'ratings'})</span>` : '';
                                     const ratingForm = `
                                         <div style="margin-top:10px; padding:10px; background:#f8f9fa; border:1px solid #ddd; border-radius:5px;">
                                             <strong style="font-size:13px; color:#333;">Rate This Incident:</strong>
-                                            <p style="margin:5px 0; font-size:12px; color:#666;">Usefulness: <strong id="map-avg-rating-${postId}">${avgRating}</strong>/5.0</p>
+                                            <p style="margin:5px 0; font-size:12px; color:#666;">Usefulness: <strong id="map-avg-rating-${postId}">${avgRating}</strong>/5.0${ratingCountText}</p>
                                             <div style="display:flex; gap:5px; margin-top:8px;">
                                                 ${[1,2,3,4,5].map(r => `<button onclick="window.ratePost('${postId}', ${r}, '${postId}')" style="flex:1; padding:6px; background:#fff; border:2px solid #2b82cb; color:#2b82cb; cursor:pointer; font-size:12px; font-weight:bold; border-radius:3px; transition:all 0.2s;" onmouseover="this.style.background='#2b82cb'; this.style.color='#fff';" onmouseout="this.style.background='#fff'; this.style.color='#2b82cb';">${r}</button>`).join('')}
                                             </div>
@@ -458,10 +460,12 @@
                                                 }
 
                                                 const avgRating = updatedPost.post_score ? updatedPost.post_score.toFixed(1) : '0.0';
+                                                const ratingCount = updatedPost.ratings && updatedPost.ratings.length > 0 ? updatedPost.ratings.length : 0;
+                                                const ratingCountText = ratingCount > 0 ? ` <span style="font-size:11px; color:#856404;">(${ratingCount} ${ratingCount === 1 ? 'rating' : 'ratings'})</span>` : '';
                                                 const ratingForm = `
                                                     <div style="margin-top:10px; padding:10px; background:#fff3cd; border:1px solid #ffc107; border-radius:5px;">
                                                         <strong style="font-size:13px; color:#856404;">Rate This Incident:</strong>
-                                                        <p style="margin:5px 0; font-size:12px; color:#856404;">Usefulness: <strong id="map-avg-rating-${postIdStr}">${avgRating}</strong>/5.0</p>
+                                                        <p style="margin:5px 0; font-size:12px; color:#856404;">Usefulness: <strong id="map-avg-rating-${postIdStr}">${avgRating}</strong>/5.0${ratingCountText}</p>
                                                         <div style="display:flex; gap:5px; margin-top:8px;">
                                                             ${[1,2,3,4,5].map(r => `<button onclick="window.ratePost('${postIdStr}', ${r}, '${postIdStr}')" style="flex:1; padding:6px; background:#fff; border:2px solid #cb2b3e; color:#cb2b3e; cursor:pointer; font-size:12px; font-weight:bold; border-radius:3px; transition:all 0.2s;" onmouseover="this.style.background='#cb2b3e'; this.style.color='#fff';" onmouseout="this.style.background='#fff'; this.style.color='#cb2b3e';">${r}</button>`).join('')}
                                                         </div>
