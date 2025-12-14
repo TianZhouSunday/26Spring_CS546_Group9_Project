@@ -4,6 +4,33 @@
         <a href="/map" class="button-primary" style="text-decoration: none;">Create Post (Map)</a>
     </div>
 
+    <div class="filter-container card" style="margin-bottom: 20px; padding: 15px;">
+        <form action="/posts" method="GET" style="display: flex; gap: 15px; align-items: end;">
+            <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                <label for="borough">Borough:</label>
+                <select name="borough" id="borough" style="width: 100%;">
+                    <option value="All" {{#if (eq selectedBorough 'All' )}}selected{{/if}}>All</option>
+                    <option value="Manhattan" {{#if (eq selectedBorough 'Manhattan' )}}selected{{/if}}>Manhattan
+                    </option>
+                    <option value="Brooklyn" {{#if (eq selectedBorough 'Brooklyn' )}}selected{{/if}}>Brooklyn</option>
+                    <option value="Queens" {{#if (eq selectedBorough 'Queens' )}}selected{{/if}}>Queens</option>
+                    <option value="The Bronx" {{#if (eq selectedBorough 'The Bronx' )}}selected{{/if}}>The Bronx
+                    </option>
+                    <option value="Staten Island" {{#if (eq selectedBorough 'Staten Island' )}}selected{{/if}}>Staten
+                        Island</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                <label for="rating">Min Rating:</label>
+                <input type="number" name="rating" id="rating" min="0" max="5" step="0.1" value="{{selectedRating}}"
+                    placeholder="Min Score (0-5)" style="width: 100%;">
+            </div>
+            <button type="submit" class="button-primary" style="height: fit-content;">Filter</button>
+            <a href="/posts" class="button button-secondary"
+                style="height: fit-content; text-decoration: none; display: flex; align-items: center;">Clear</a>
+        </form>
+    </div>
+
     {{#if posts}}
     <div style="display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
         {{#each posts}}
@@ -35,12 +62,17 @@
     </div>
     {{else}}
     <div style="text-align: center; margin-top: 50px;">
-        {{#equals title "Posts"}}
-            <h3>No posts yet.</h3>
-            <p>Go to the <a href="/map">Map</a> to define the first danger zone!</p>     
+        {{#equals title "Community Posts"}}
+        <h3>No posts yet.</h3>
+        <p>Go to the <a href="/map">Map</a> to define the first danger zone!</p>
         {{else}}
-            <h3>The archive is empty.</h3>
-            <p>View recent posts <a href="/posts">here.</a></p>    
+        {{#equals title "Posts"}}
+        <h3>No posts yet.</h3>
+        <p>Go to the <a href="/map">Map</a> to define the first danger zone!</p>
+        {{else}}
+        <h3>The archive is empty.</h3>
+        <p>View recent posts <a href="/posts">here.</a></p>
+        {{/equals}}
         {{/equals}}
     </div>
     {{/if}}

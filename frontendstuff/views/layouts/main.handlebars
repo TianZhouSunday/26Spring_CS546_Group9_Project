@@ -1,12 +1,14 @@
 {{! the main page for the project}}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <title>{{title}} - NYC Danger Map</title>
     <title>{{title}}</title>
     <link rel="stylesheet" href="/public/css/styles.css">
 </head>
+
 <body>
     <header>
         <nav>
@@ -14,15 +16,15 @@
                 <a href="/">NYC Danger Map: Be Aware of the Dangers</a>
             </div>
             <ul class="nav-links">
-                
-                <li><a href="/map">Safety Map</a></li>
-                {{#equals title "Posts"}}
-                    <li><a href="/posts/archive">Posts Archive</a></li>          
+
+                <li><a href="/map">Danger Map</a></li>
+                {{#equals title "Community Posts"}}
+                <li><a href="/posts/archive">Posts Archive</a></li>
                 {{else}}
-                    <li><a href="/posts">Posts</a></li>
+                <li><a href="/posts">Community Posts</a></li>
                 {{/equals}}
                 <li><a href="/profile">Profile</a></li>
-                
+
                 <li>
                     <form action="/logout" method="POST" class="inline-form">
                         <button type="submit" class="link-button">Logout</button>
@@ -38,4 +40,5 @@
         <p>CS 546 Group 9 Final Project: NYC Danger Map</p>
     </footer>
 </body>
+
 </html>

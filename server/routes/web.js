@@ -2,7 +2,27 @@
 import express from 'express';
 import { createUser, checkUser, getUserById } from '../data/users.js';
 import { getAllPosts, getPostById, createPost, deletePost } from '../data/posts.js';
+import commentData from '../data/comments.js';
 import helper from '../data/helpers.js';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Configure multer for file upload (Same as auth_routes.js)
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, '../../frontendstuff/public/uploads'));
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
 
 const router = express.Router();
 
@@ -110,7 +130,11 @@ router.route('/posts').get(async (req, res) => {
   }
 
   try {
-    let postList = await getAllPosts();
+    const filter = {};
+    if (req.query.borough) filter.borough = req.query.borough;
+    if (req.query.rating) filter.minScore = req.query.rating;
+
+    let postList = await getAllPosts(filter);
 
     //filter out posts made by blocked users and posts earlier than a week old
     const blockedUsers = (req.session.user.blocked_users || []).map(String);
@@ -126,8 +150,11 @@ router.route('/posts').get(async (req, res) => {
     });
 
     res.render('posts', {
-      title: 'Posts',
-      posts: postList
+      title: 'Community Posts',
+      posts: postList,
+      user: req.session.user,
+      selectedBorough: req.query.borough,
+      selectedRating: req.query.rating
     });
   } catch (error) {
     return res.status(500).render('error', {
@@ -171,19 +198,26 @@ router.route('/posts/archive').get(async (req, res) => {
 });
 
 // create post
-router.route('/posts').post(async (req, res) => {
+router.route('/posts').post(upload.single('photo'), async (req, res) => {
   if (!req.session.user) {
     return res.redirect('/login');
   }
 
-  let title = req.body.title.trim();
-  let body = req.body.body.trim();
-  let photo = req.body.photo.trim();
-  // trim all inputs 
+  let title = req.body.title ? req.body.title.trim() : "";
+  let body = req.body.body ? req.body.body.trim() : "";
+
+  // Handle photo: file upload > URL input
+  let photo = "";
+  if (req.file) {
+    photo = `/public/uploads/${req.file.filename}`;
+  } else if (req.body.photo) {
+    photo = req.body.photo.trim();
+  }
+
   let longitude = req.body.longitude;
   let latitude = req.body.latitude;
   let sensitive = req.body.sensitive;
-  console.log("hi: " + req.body.anonymous);
+  let borough = req.body.borough;
   let anonymous = (req.body.anonymous === 'on');
 
   if (!title || !longitude || !latitude) {
@@ -211,7 +245,7 @@ router.route('/posts').post(async (req, res) => {
   let userId = req.session.user._id.toString();
 
   try {
-    await createPost(title, body, photo, location, isSensitive, userId, anonymous);
+    await createPost(title, body, photo, location, borough, isSensitive, userId, anonymous);
     // Redirect logic: if created from map (which typically might be referred), 
     // we could check referer, but for now redirecting to posts list is standard behavior in this app
     res.redirect('/posts');
@@ -244,7 +278,7 @@ router.route('/posts/:id').get(async (req, res) => {
 
   try {
     let post = await getPostById(id);
-    let comments = []; // comments
+    let comments = await commentData.getAllComments(id);
 
     let user = await getUserById(post.user);
 
@@ -252,7 +286,8 @@ router.route('/posts/:id').get(async (req, res) => {
       title: post.title,
       post: post,
       comments: comments,
-      user: user
+      user: user,
+      currentUser: req.session.user
     });
   } catch (error) {
     return res.status(404).render('error', {
@@ -290,6 +325,59 @@ router.route('/posts/:id/delete').post(async (req, res) => {
       title: 'Error',
       error: 'Error: Post not found'
     });
+  }
+});
+
+// add comment
+router.route('/posts/:id/comment').post(async (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+
+  let id = req.params.id;
+  let text = req.body.text;
+  let score = req.body.score; // Expect score from form
+
+  if (!text || typeof text !== 'string' || text.trim().length === 0) {
+    try {
+      let post = await getPostById(id);
+      let user = await getUserById(post.user);
+      return res.status(400).render('post', {
+        title: post.title,
+        post: post,
+        user: user,
+        currentUser: req.session.user,
+        error: "Comment cannot be empty"
+      });
+    } catch (e) {
+      return res.status(404).render('error', { error: 'Post not found' });
+    }
+  }
+
+  // Default score to 3 if missing (or handle validation)
+  let scoreNum = 3;
+  if (score) {
+    scoreNum = parseInt(score);
+  }
+
+  try {
+    text = text.trim();
+    await commentData.createComment(id, req.session.user._id.toString(), text, scoreNum);
+    res.redirect(`/posts/${id}`);
+  } catch (error) {
+    try {
+      let post = await getPostById(id);
+      let user = await getUserById(post.user);
+      res.status(500).render('post', {
+        title: post.title,
+        post: post,
+        user: user,
+        currentUser: req.session.user,
+        error: "Failed to add comment: " + error.message
+      });
+    } catch (e) {
+      res.status(404).render('error', { error: 'Post not found' });
+    }
   }
 });
 

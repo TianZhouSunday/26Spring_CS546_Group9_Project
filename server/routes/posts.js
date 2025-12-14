@@ -159,7 +159,7 @@ router.post('/', async (req, res) => {
     if (!postDataBody || Object.keys(postDataBody).length === 0) {
         return res.status(400).json({ error: 'Request body must not be empty.' });
     }
-    let { title, body, photo, latitude, longitude, sensitive, anonymous } = postDataBody;
+    let { title, body, photo, latitude, longitude, borough, sensitive, anonymous } = postDataBody;
     const userId = req.session.user._id.toString();
 
     // Construct location object if individual fields are provided
@@ -181,7 +181,7 @@ router.post('/', async (req, res) => {
 
     // Try to create
     try {
-        const newPost = await createPost(title, body, photo, location, sensitive, userId, anonymous);
+        const newPost = await createPost(title, body, photo, location, borough, sensitive, userId, anonymous);
         return res.status(201).redirect(`/posts/${newPost._id.toString()}`);
     } catch (e) {
         // Error classification
@@ -336,7 +336,7 @@ router.post('/:id/comments', async (req, res) => {
     console.log('Request path:', req.path);
     console.log('Request url:', req.url);
     console.log('Session user:', req.session.user ? 'exists' : 'missing');
-    
+
     let id;
     // Check validate ID (400 error)
     try {
@@ -370,7 +370,7 @@ router.post('/:id/comments', async (req, res) => {
     if (!text || typeof text !== 'string') {
         return res.status(400).json({ error: 'Comment text is required and must be a string' });
     }
-    
+
     try {
         helper.AvailableString(text, 'comment text');
     } catch (e) {
@@ -381,7 +381,7 @@ router.post('/:id/comments', async (req, res) => {
     if (score === undefined || score === null) {
         return res.status(400).json({ error: 'Score is required' });
     }
-    
+
     const scoreNum = Number(score);
     if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 5) {
         return res.status(400).json({ error: 'Score must be a valid number between 0 and 5' });

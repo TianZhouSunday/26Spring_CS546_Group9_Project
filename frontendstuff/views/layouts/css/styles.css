@@ -156,13 +156,35 @@ main {
     color: #444;
 }
 
-.form-group input {
+.form-group input,
+.form-group select,
+.form-group textarea {
     width: 100%;
     padding: 12px;
     border: 1px solid #ddd;
     border-radius: 8px;
     font-size: 1rem;
     transition: border-color 0.2s;
+    background-color: white;
+    /* Ensure select has white bg */
+}
+
+.button-secondary {
+    background-color: #e0e0e0;
+    color: #333;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.button-secondary:hover {
+    background-color: #d0d0d0;
 }
 
 .form-group input:focus {
@@ -392,34 +414,39 @@ footer {
     padding: 80px 24px;
     text-align: center;
     position: relative;
-    overflow: hidden;   
+    overflow: hidden;
 }
+
 .home-content {
     position: relative;
     z-index: 1;
     max-width: 800px;
     margin: 0 auto;
 }
-.home-section h1{
+
+.home-section h1 {
     font-size: 3.5rem;
     font-weight: 800;
     margin-bottom: 20px;
     line-height: 1.2;
 }
+
 .home-section h1 span {
     color: #ff385c;
 }
+
 .home-section p {
     font-size: 1.3rem;
     margin-bottom: 40px;
     color: rgba(255, 255, 255, 0.85);
     line-height: 1.6;
 }
+
 .home-buttons {
     display: flex;
     gap: 16px;
     justify-content: center;
-    flex-wrap: wrap;   
+    flex-wrap: wrap;
 }
 
 .btn-home {
