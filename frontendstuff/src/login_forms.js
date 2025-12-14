@@ -51,7 +51,7 @@
         showError(usernameErr, "Username is required.");
         valid = false;
       } else if (!checkUsername(username.value.trim())) {
-        showError(usernameErr, "Username must be 3–20 characters and alphanumeric.");
+        showError(usernameErr, "Username must be 3–20 characters and alphanumeric with no spaces.");
         valid = false;
       }
 

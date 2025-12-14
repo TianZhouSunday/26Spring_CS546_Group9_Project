@@ -1,12 +1,24 @@
 import { Router } from 'express';
-import { getUserById } from '../data/users.js';
+import { getUserById, blockUser, unblockUser } from '../data/users.js';
 
 const router = Router();
 
 router.get('/:userId', async (req, res) => {
+    if (!req.session.user) {
+        return res.redirect("/login");
+    }
+
     try {
+
         const user = await getUserById(req.params.userId);
-        return res.render("profile", {title: user.username, user: user});
+
+        let isSelf = false;
+        let isBlocked = false;
+
+        isBlocked = req.session.user.blocked_users.map(id => id.toString()).includes(req.params.userId);
+        if (req.params.userId === req.session.user._id.toString()) isSelf = true;
+
+        return res.render("profile", {title: user.username, user: user, self: isSelf, blocked: isBlocked});
     } catch (error) {
         if(error.message.includes("no user found")){
             return res.status(404).render("error", {
@@ -29,6 +41,47 @@ router.get('/:userId', async (req, res) => {
     }
 })
 
+router.post("/:blockId/unblock", async (req, res) => {
+  try {
+        //check if the user is logged in
+        if (!req.session.user) {
+            return res.status(401).render("error", {
+                title: "Unauthorized",
+                error: "You must be logged in to unblock a user."
+            });
+        }
+
+        const blockId = req.params.blockId;
+        const userId = req.session.user._id.toString();
+
+        const updatedUser = await unblockUser(blockId, userId);
+        req.session.user = updatedUser;
+        // redirect to profile of unblocked user
+        return res.redirect(`/user/${blockId}`);
+
+
+    } catch (error) {
+        if (error.message.includes("one or more users not found")) {
+            return res.status(404).render("error", {
+                title: "Error",
+                error: "User not found"
+            });
+        }
+
+        if (error.message.includes("blockUser")) {
+            return res.status(400).render("error", {
+                title: "Error",
+                error: "Bad request"
+            });
+        }
+
+        return res.status(500).render("error", {
+            title: "Server Error",
+            error: error.message
+        });
+    }
+});
+
 router.post("/:blockId/block", async (req, res) => {
     try {
         //check if the user is logged in
@@ -43,9 +96,9 @@ router.post("/:blockId/block", async (req, res) => {
         const userId = req.session.user._id.toString();
 
         const updatedUser = await blockUser(blockId, userId);
-
-        // redirect to user profile
-        return res.redirect(`/users/${userId}`);
+        req.session.user = updatedUser;
+        // redirect to posts
+        return res.redirect(`/posts`);
 
 
     } catch (error) {
@@ -71,3 +124,4 @@ router.post("/:blockId/block", async (req, res) => {
 });
 
 export default router;
+

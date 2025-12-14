@@ -12,6 +12,8 @@
             <p><strong>Posted:</strong> {{post.date}}</p>
             <p><strong>Location:</strong> {{post.location.latitude}}, {{post.location.longitude}}</p>
             <p><strong>Score:</strong> {{post.post_score}}</p>
+            <p><strong>Posted by:</strong><a href="/user/{{post.user}}">{{user.username}}</a>
+            </p>
         </div>
 
         {{#if (and post.sensitive currentUser.hideSensitiveContent)}}

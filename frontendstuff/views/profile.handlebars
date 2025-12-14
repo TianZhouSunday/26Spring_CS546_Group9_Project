@@ -15,9 +15,32 @@
 
     <p>Borough: {{user.borough}}</p>
 
-    <div class="profile-actions">
-        <a href="/edit-profile" class="button-primary">
-            Edit Profile
-        </a>
-    </div>
+    {{#if self}}
+        <div class="profile-actions">
+            <a href="/edit-profile" class="button-primary">
+                Edit Profile
+            </a>
+        </div>
+    {{else}}
+        {{#if blocked}}
+            <div class="profile-actions">
+                <form method="POST" action="/user/{{user._id}}/unblock" class="inline-form">
+                <button type="submit" class="button-primary"
+                    onclick="return confirm('Are you sure you want to unblock this user?')">
+                    Unblock
+                </button>
+                </form>
+            </div>
+        {{else}}
+            <div class="profile-actions">
+                <form method="POST" action="/user/{{user._id}}/block" class="inline-form">
+                <button type="submit" class="button-primary"
+                    onclick="return confirm('Are you sure you want to block this user?')">
+                    Block
+                </button>
+                </form>
+            </div>
+        {{/if}}
+    {{/if}}
+
 </div>

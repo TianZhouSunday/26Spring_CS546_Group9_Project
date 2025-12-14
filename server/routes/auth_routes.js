@@ -155,7 +155,8 @@ router.get('/profile', (req, res) => {
   }
   res.render("profile", {
     title: "Your Profile",
-    user: req.session.user
+    user: req.session.user,
+    self: true
   });
 });
 
