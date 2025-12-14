@@ -2,59 +2,47 @@
     <h1>Edit Profile</h1>
 
     {{#if error}}
-        <div class="error-message">{{error}}</div>
+    <div class="error-message">{{error}}</div>
     {{/if}}
 
-    <form action="/edit-profile" method="POST" class="edit-profile-form">
+    <form action="/edit-profile" method="POST" class="edit-profile-form" enctype="multipart/form-data">
 
         <!--edit username-->
         <div class="edit-profile-field">
             <label for="username">Username</label>
-            <input
-                type="text"
-                id="username"
-                name="username"
-                value="{{user.username}}"
-                required
-            >
+            <input type="text" id="username" name="username" value="{{user.username}}" required>
         </div>
 
         <!--change email-->
         <div class="edit-profile-field">
             <label for="email">Email</label>
-            <input
-                type="email"
-                id="email"
-                name="email"
-                value="{{user.email}}"
-                required
-            >
+            <input type="email" id="email" name="email" value="{{user.email}}" required>
         </div>
 
         <!-- borough dropdown -->
         <div class="edit-profile-field">
             <label for="borough">Borough</label>
             <select id="borough" name="borough" required>
-                <option value="Manhattan" {{#equals user.borough "Manhattan"}}selected{{/equals}}>Manhattan</option>
-                <option value="Brooklyn" {{#equals user.borough "Brooklyn"}}selected{{/equals}}>Brooklyn</option>
-                <option value="Queens" {{#equals user.borough "Queens"}}selected{{/equals}}>Queens</option>
-                <option value="Bronx" {{#equals user.borough "Bronx"}}selected{{/equals}}>Bronx</option>
-                <option value="Staten Island" {{#equals user.borough "Staten Island"}}selected{{/equals}}>Staten Island</option>
-                <option value="None" {{#equals user.borough "None"}}selected{{/equals}}>None</option>
+                <option value="Manhattan" {{#equals user.borough "Manhattan" }}selected{{/equals}}>Manhattan</option>
+                <option value="Brooklyn" {{#equals user.borough "Brooklyn" }}selected{{/equals}}>Brooklyn</option>
+                <option value="Queens" {{#equals user.borough "Queens" }}selected{{/equals}}>Queens</option>
+                <option value="Bronx" {{#equals user.borough "Bronx" }}selected{{/equals}}>Bronx</option>
+                <option value="Staten Island" {{#equals user.borough "Staten Island" }}selected{{/equals}}>Staten Island
+                </option>
+                <option value="None" {{#equals user.borough "None" }}selected{{/equals}}>None</option>
             </select>
         </div>
 
         <!-- pfp  -->
         <div class="edit-profile-field">
-            <label for="profile_picture">Profile Picture URL</label>
-            <input
-                type="url"
-                id="profile_picture"
-                name="profile_picture"
-                value="{{user.profile_picture}}"
-                placeholder="https://example.com/image.jpg"
-            >
-            <small>Leave blank to keep your current picture.</small>
+            <label for="profile_picture">Profile Picture</label>
+            {{#if user.profile_picture}}
+            <div class="current-pfp">
+                <img src="{{user.profile_picture}}" alt="Current Profile Picture"
+                    style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; margin-bottom: 10px;">
+            </div>
+            {{/if}}
+            <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
         </div>
 
 
@@ -63,12 +51,8 @@
         <!--sensitive content checkbox-->
         <div class="edit-profile-field checkbox-group">
             <label for="hideSensitiveContent">
-                <input
-                    type="checkbox"
-                    id="hideSensitiveContent"
-                    name="hideSensitiveContent"
-                    {{#if user.hideSensitiveContent}}checked{{/if}}
-                >
+                <input type="checkbox" id="hideSensitiveContent" name="hideSensitiveContent" {{#if
+                    user.hideSensitiveContent}}checked{{/if}}>
                 Hide Sensitive Content
             </label>
         </div>

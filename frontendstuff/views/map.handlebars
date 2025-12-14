@@ -186,10 +186,10 @@
         let heatLayer = null;
 
         let heatConfig = {
-            radius: 50,
+            radius: 25,
             blur: 35,
             maxZoom: 12,
-            max: 0.6,
+            max: 0.5,
             minOpacity: 0.4,
             gradient: {
                 0.0: 'blue',
@@ -244,8 +244,8 @@
 
                         const postId = post._id;
                         const marker = L.marker([post.location.latitude, post.location.longitude], { icon: blueIcon });
-                        
-                        const loadCommentsAndUpdatePopup = function() {
+
+                        const loadCommentsAndUpdatePopup = function () {
                             fetch(`/api/posts/${postId}/comments`)
                                 .then(response => response.json())
                                 .then(comments => {
@@ -259,8 +259,8 @@
                                     } else {
                                         commentsHtml = '<div style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;"><p style="font-style:italic; color:#666; font-size:12px;">No comments yet</p></div>';
                                     }
-                                    
-                                    const sensitiveWarning = post.sensitive ? '<p style="color:red;font-weight:bold; font-size:12px;">⚠️ Sensitive Content</p>' : '';
+
+                                    const sensitiveWarning = post.sensitive ? '<p style="color:red;font-weight:bold; font-size:12px;">Sensitive Content</p>' : '';
                                     const commentForm = `
                                         <div style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;">
                                             <strong style="font-size:12px;">Add Comment:</strong>
@@ -271,7 +271,7 @@
                                             </form>
                                         </div>
                                     `;
-                                    
+
                                     const fullContent = `
                                         <div class="post-preview" style="max-width:300px;">
                                             <h3 style="margin:0 0 10px 0; font-size:16px;">${post.title}</h3>
@@ -283,33 +283,33 @@
                                             <a href="/posts/${postId}" style="display:block; margin-top:10px; text-align:center; font-size:12px;">View Full Details</a>
                                         </div>
                                     `;
-                                    
+
                                     marker.setPopupContent(fullContent);
-                                    
+
                                     setTimeout(() => {
                                         const form = document.getElementById(`comment-form-${postId}`);
                                         if (form) {
-                                            form.addEventListener('submit', function(e) {
+                                            form.addEventListener('submit', function (e) {
                                                 e.preventDefault();
                                                 const formData = new FormData(e.target);
                                                 const text = formData.get('text');
                                                 const scoreStr = formData.get('score');
                                                 const score = parseInt(scoreStr);
-                                                
+
                                                 if (!text || text.trim().length === 0) {
                                                     alert('Please enter a comment');
                                                     return;
                                                 }
-                                                
+
                                                 if (isNaN(score) || score < 0 || score > 5) {
                                                     alert('Please enter a valid score between 0 and 5');
                                                     return;
                                                 }
-                                                
+
                                                 const commentUrl = `/api/posts/${postId}/comments`;
                                                 console.log('Posting comment to:', commentUrl);
                                                 console.log('Comment data:', { text: text.trim(), score: score });
-                                                
+
                                                 fetch(commentUrl, {
                                                     method: 'POST',
                                                     headers: {
@@ -321,35 +321,35 @@
                                                         score: score
                                                     })
                                                 })
-                                                .then(response => {
-                                                    console.log('Comment response status:', response.status);
-                                                    console.log('Comment response URL:', response.url);
-                                                    console.log('Comment response headers:', response.headers.get('content-type'));
-                                                    
-                                                    if (response.ok) {
-                                                        return response.json().then(data => {
-                                                            loadCommentsAndUpdatePopup();
-                                                        });
-                                                    } else {
-                                                        const contentType = response.headers.get('content-type');
-                                                        if (contentType && contentType.includes('application/json')) {
+                                                    .then(response => {
+                                                        console.log('Comment response status:', response.status);
+                                                        console.log('Comment response URL:', response.url);
+                                                        console.log('Comment response headers:', response.headers.get('content-type'));
+
+                                                        if (response.ok) {
                                                             return response.json().then(data => {
-                                                                alert('Error: ' + (data.error || 'Failed to post comment. Please make sure you are logged in.'));
-                                                            }).catch(() => {
-                                                                alert('Error: Failed to post comment. Please make sure you are logged in.');
+                                                                loadCommentsAndUpdatePopup();
                                                             });
                                                         } else {
-                                                            return response.text().then(text => {
-                                                                console.error('Non-JSON response:', text.substring(0, 200));
-                                                                alert('Error: Server returned non-JSON response. Status: ' + response.status + '. Please check console for details.');
-                                                            });
+                                                            const contentType = response.headers.get('content-type');
+                                                            if (contentType && contentType.includes('application/json')) {
+                                                                return response.json().then(data => {
+                                                                    alert('Error: ' + (data.error || 'Failed to post comment. Please make sure you are logged in.'));
+                                                                }).catch(() => {
+                                                                    alert('Error: Failed to post comment. Please make sure you are logged in.');
+                                                                });
+                                                            } else {
+                                                                return response.text().then(text => {
+                                                                    console.error('Non-JSON response:', text.substring(0, 200));
+                                                                    alert('Error: Server returned non-JSON response. Status: ' + response.status + '. Please check console for details.');
+                                                                });
+                                                            }
                                                         }
-                                                    }
-                                                })
-                                                .catch(err => {
-                                                    alert('Error posting comment: ' + err.message);
-                                                    console.error('Comment error:', err);
-                                                });
+                                                    })
+                                                    .catch(err => {
+                                                        alert('Error posting comment: ' + err.message);
+                                                        console.error('Comment error:', err);
+                                                    });
                                             });
                                         }
                                     }, 100);
@@ -369,12 +369,12 @@
                                     marker.setPopupContent(errorContent);
                                 });
                         };
-                        
-                        marker.on('popupopen', function() {
+
+                        marker.on('popupopen', function () {
                             loadCommentsAndUpdatePopup();
                         });
-                        
-                        const sensitiveWarning = post.sensitive ? '<p style="color:red;font-weight:bold; font-size:12px;">⚠️ Sensitive Content</p>' : '';
+
+                        const sensitiveWarning = post.sensitive ? '<p style="color:red;font-weight:bold; font-size:12px;">Sensitive Content</p>' : '';
                         const initialContent = `
                             <div class="post-preview" style="max-width:300px;">
                                 <h3 style="margin:0 0 10px 0; font-size:16px;">${post.title}</h3>
@@ -385,8 +385,8 @@
                                 <a href="/posts/${postId}" style="display:block; margin-top:10px; text-align:center; font-size:12px;">View Details</a>
                             </div>
                         `;
-                        
-                        marker.bindPopup(initialContent, {maxWidth: 350}).addTo(communityMarkers);
+
+                        marker.bindPopup(initialContent, { maxWidth: 350 }).addTo(communityMarkers);
                     }
                 });
                 updateHeatmap();
@@ -395,7 +395,7 @@
 
         // Fetch and display NYC Official Shooting Data (Red markers)
         // Using SODA API endpoint to get JSON data directly
-        const nycApiUrl = "https://data.cityofnewyork.us/resource/833y-fsy8.json?$limit=500&$order=occur_date DESC"; // historical data is limited to 1000
+        const nycApiUrl = "https://data.cityofnewyork.us/resource/833y-fsy8.json?$limit=500&$order=occur_date DESC"; // historical data is limited to 500
 
         fetch(nycApiUrl)
             .then(response => response.json())
@@ -409,17 +409,17 @@
 
                         const incidentId = incident.incident_key || `${incident.occur_date}-${lat}-${lng}`;
                         const marker = L.marker([incident.latitude, incident.longitude], { icon: redIcon });
-                        
-                        const loadDiscussionPost = function() {
+
+                        const loadDiscussionPost = function () {
                             fetch(`/api/posts?latitude=${lat}&longitude=${lng}&radius=0.001`)
                                 .then(response => response.json())
                                 .then(posts => {
-                                    const discussionPost = posts.find(p => 
+                                    const discussionPost = posts.find(p =>
                                         p.title && p.title.includes('NYC Shooting Incident') &&
                                         Math.abs(p.location.latitude - lat) < 0.0001 &&
                                         Math.abs(p.location.longitude - lng) < 0.0001
                                     );
-                                    
+
                                     let discussionHtml = '';
                                     if (discussionPost) {
                                         fetch(`/api/posts/${discussionPost._id}/comments`)
@@ -435,7 +435,7 @@
                                                 } else {
                                                     commentsHtml = '<div style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;"><p style="font-style:italic; color:#666; font-size:12px;">No comments yet</p></div>';
                                                 }
-                                                
+
                                                 const commentForm = `
                                                     <div style="margin-top:10px; border-top:1px solid #ccc; padding-top:10px;">
                                                         <strong style="font-size:12px;">Add Comment:</strong>
@@ -446,7 +446,7 @@
                                                         </form>
                                                     </div>
                                                 `;
-                                                
+
                                                 const fullContent = `
                                                     <div class="incident-preview" style="max-width:300px;">
                                                         <h3 style="color: #d32f2f; margin:0 0 10px 0; font-size:16px;">NYC Shooting Incident</h3>
@@ -463,29 +463,29 @@
                                                         ${commentForm}
                                                     </div>
                                                 `;
-                                                
+
                                                 marker.setPopupContent(fullContent);
-                                                
+
                                                 setTimeout(() => {
                                                     const form = document.getElementById(`comment-form-${discussionPost._id}`);
                                                     if (form) {
-                                                        form.addEventListener('submit', function(e) {
+                                                        form.addEventListener('submit', function (e) {
                                                             e.preventDefault();
                                                             const formData = new FormData(e.target);
                                                             const text = formData.get('text');
                                                             const scoreStr = formData.get('score');
                                                             const score = parseInt(scoreStr);
-                                                            
+
                                                             if (!text || text.trim().length === 0) {
                                                                 alert('Please enter a comment');
                                                                 return;
                                                             }
-                                                            
+
                                                             if (isNaN(score) || score < 0 || score > 5) {
                                                                 alert('Please enter a valid score between 0 and 5');
                                                                 return;
                                                             }
-                                                            
+
                                                             fetch(`/api/posts/${discussionPost._id}/comments`, {
                                                                 method: 'POST',
                                                                 headers: {
@@ -497,34 +497,34 @@
                                                                     score: score
                                                                 })
                                                             })
-                                                            .then(response => {
-                                                                console.log('NYC comment response status:', response.status);
-                                                                console.log('NYC comment response headers:', response.headers.get('content-type'));
-                                                                
-                                                                if (response.ok) {
-                                                                    return response.json().then(data => {
-                                                                        loadDiscussionPost();
-                                                                    });
-                                                                } else {
-                                                                    const contentType = response.headers.get('content-type');
-                                                                    if (contentType && contentType.includes('application/json')) {
+                                                                .then(response => {
+                                                                    console.log('NYC comment response status:', response.status);
+                                                                    console.log('NYC comment response headers:', response.headers.get('content-type'));
+
+                                                                    if (response.ok) {
                                                                         return response.json().then(data => {
-                                                                            alert('Error: ' + (data.error || 'Failed to post comment. Please make sure you are logged in.'));
-                                                                        }).catch(() => {
-                                                                            alert('Error: Failed to post comment. Please make sure you are logged in.');
+                                                                            loadDiscussionPost();
                                                                         });
                                                                     } else {
-                                                                        return response.text().then(text => {
-                                                                            console.error('Non-JSON response:', text.substring(0, 200));
-                                                                            alert('Error: Server returned non-JSON response. Status: ' + response.status + '. Please check console for details.');
-                                                                        });
+                                                                        const contentType = response.headers.get('content-type');
+                                                                        if (contentType && contentType.includes('application/json')) {
+                                                                            return response.json().then(data => {
+                                                                                alert('Error: ' + (data.error || 'Failed to post comment. Please make sure you are logged in.'));
+                                                                            }).catch(() => {
+                                                                                alert('Error: Failed to post comment. Please make sure you are logged in.');
+                                                                            });
+                                                                        } else {
+                                                                            return response.text().then(text => {
+                                                                                console.error('Non-JSON response:', text.substring(0, 200));
+                                                                                alert('Error: Server returned non-JSON response. Status: ' + response.status + '. Please check console for details.');
+                                                                            });
+                                                                        }
                                                                     }
-                                                                }
-                                                            })
-                                                            .catch(err => {
-                                                                alert('Error posting comment: ' + err.message);
-                                                                console.error(err);
-                                                            });
+                                                                })
+                                                                .catch(err => {
+                                                                    alert('Error posting comment: ' + err.message);
+                                                                    console.error(err);
+                                                                });
                                                         });
                                                     }
                                                 }, 100);
@@ -541,7 +541,7 @@
                                                 </form>
                                             </div>
                                         `;
-                                        
+
                                         const fullContent = `
                                             <div class="incident-preview" style="max-width:300px;">
                                                 <h3 style="color: #d32f2f; margin:0 0 10px 0; font-size:16px;">NYC Shooting Incident</h3>
@@ -553,32 +553,32 @@
                                                 ${createDiscussionForm}
                                             </div>
                                         `;
-                                        
+
                                         marker.setPopupContent(fullContent);
-                                        
+
                                         setTimeout(() => {
                                             const form = document.getElementById(`create-discussion-${incidentId}`);
                                             if (form) {
-                                                form.addEventListener('submit', function(e) {
+                                                form.addEventListener('submit', function (e) {
                                                     e.preventDefault();
                                                     const formData = new FormData(e.target);
                                                     const comment = formData.get('comment');
                                                     const scoreStr = formData.get('score');
                                                     const score = parseInt(scoreStr);
-                                                    
+
                                                     if (!comment || comment.trim().length === 0) {
                                                         alert('Please enter a comment');
                                                         return;
                                                     }
-                                                    
+
                                                     if (isNaN(score) || score < 0 || score > 5) {
                                                         alert('Please enter a valid score between 0 and 5');
                                                         return;
                                                     }
-                                                    
+
                                                     const title = `NYC Shooting Incident - ${incident.occur_date} - ${incident.boro}`;
                                                     const body = `Official NYC Shooting Incident\n\nDate: ${incident.occur_date}\nTime: ${incident.occur_time}\nBorough: ${incident.boro}\nLocation: ${incident.location_desc || 'Street'}\n\nCommunity Comment: ${comment.trim()}`;
-                                                    
+
                                                     fetch('/api/posts', {
                                                         method: 'POST',
                                                         headers: {
@@ -596,85 +596,85 @@
                                                             sensitive: false
                                                         })
                                                     })
-                                                    .then(response => {
-                                                        const contentType = response.headers.get('content-type');
-                                                        if (response.ok) {
-                                                            if (contentType && contentType.includes('application/json')) {
-                                                                return response.json();
-                                                            } else {
-                                                                throw new Error('Server returned non-JSON response');
-                                                            }
-                                                        } else {
-                                                            if (contentType && contentType.includes('application/json')) {
-                                                                return response.json().then(data => {
-                                                                    throw new Error(data.error || 'Failed to create discussion. Please make sure you are logged in.');
-                                                                });
-                                                            } else {
-                                                                throw new Error('Failed to create discussion. Please make sure you are logged in.');
-                                                            }
-                                                        }
-                                                    })
-                                                    .then(post => {
-                                                        console.log('Created discussion post:', post);
-                                                        console.log('Posting comment to post ID:', post._id);
-                                                        const commentUrl = `/api/posts/${post._id}/comments`;
-                                                        console.log('Comment URL:', commentUrl);
-                                                        return fetch(commentUrl, {
-                                                            method: 'POST',
-                                                            headers: {
-                                                                'Content-Type': 'application/json'
-                                                            },
-                                                            credentials: 'include',
-                                                            body: JSON.stringify({
-                                                                text: comment.trim(),
-                                                                score: score
-                                                            })
-                                                        });
-                                                    })
-                                                    .then(response => {
-                                                        console.log('Create discussion comment response status:', response.status);
-                                                        console.log('Create discussion comment response URL:', response.url);
-                                                        console.log('Create discussion comment response headers:', response.headers.get('content-type'));
-                                                        console.log('Create discussion comment redirected:', response.redirected);
-                                                        
-                                                        if (response.ok) {
+                                                        .then(response => {
                                                             const contentType = response.headers.get('content-type');
-                                                            if (contentType && contentType.includes('application/json')) {
-                                                                return response.json().then(data => {
-                                                                    marker.closePopup();
-                                                                    setTimeout(() => {
-                                                                        marker.openPopup();
-                                                                        loadDiscussionPost();
-                                                                    }, 100);
-                                                                });
-                                                            } else {
-                                                                return response.text().then(text => {
-                                                                    console.error('Non-JSON response (OK):', text.substring(0, 500));
+                                                            if (response.ok) {
+                                                                if (contentType && contentType.includes('application/json')) {
+                                                                    return response.json();
+                                                                } else {
                                                                     throw new Error('Server returned non-JSON response');
-                                                                });
-                                                            }
-                                                        } else {
-                                                            const contentType = response.headers.get('content-type');
-                                                            if (contentType && contentType.includes('application/json')) {
-                                                                return response.json().then(data => {
-                                                                    alert('Error: ' + (data.error || 'Failed to post comment. Please make sure you are logged in.'));
-                                                                }).catch(() => {
-                                                                    alert('Error: Failed to post comment. Please make sure you are logged in.');
-                                                                });
+                                                                }
                                                             } else {
-                                                                return response.text().then(text => {
-                                                                    console.error('Non-JSON response (Error):', text.substring(0, 500));
-                                                                    console.error('Response status:', response.status);
-                                                                    console.error('Response URL:', response.url);
-                                                                    alert('Error: Server returned non-JSON response. Status: ' + response.status + '. Check console for details.');
-                                                                });
+                                                                if (contentType && contentType.includes('application/json')) {
+                                                                    return response.json().then(data => {
+                                                                        throw new Error(data.error || 'Failed to create discussion. Please make sure you are logged in.');
+                                                                    });
+                                                                } else {
+                                                                    throw new Error('Failed to create discussion. Please make sure you are logged in.');
+                                                                }
                                                             }
-                                                        }
-                                                    })
-                                                    .catch(err => {
-                                                        alert('Error: ' + err.message);
-                                                        console.error(err);
-                                                    });
+                                                        })
+                                                        .then(post => {
+                                                            console.log('Created discussion post:', post);
+                                                            console.log('Posting comment to post ID:', post._id);
+                                                            const commentUrl = `/api/posts/${post._id}/comments`;
+                                                            console.log('Comment URL:', commentUrl);
+                                                            return fetch(commentUrl, {
+                                                                method: 'POST',
+                                                                headers: {
+                                                                    'Content-Type': 'application/json'
+                                                                },
+                                                                credentials: 'include',
+                                                                body: JSON.stringify({
+                                                                    text: comment.trim(),
+                                                                    score: score
+                                                                })
+                                                            });
+                                                        })
+                                                        .then(response => {
+                                                            console.log('Create discussion comment response status:', response.status);
+                                                            console.log('Create discussion comment response URL:', response.url);
+                                                            console.log('Create discussion comment response headers:', response.headers.get('content-type'));
+                                                            console.log('Create discussion comment redirected:', response.redirected);
+
+                                                            if (response.ok) {
+                                                                const contentType = response.headers.get('content-type');
+                                                                if (contentType && contentType.includes('application/json')) {
+                                                                    return response.json().then(data => {
+                                                                        marker.closePopup();
+                                                                        setTimeout(() => {
+                                                                            marker.openPopup();
+                                                                            loadDiscussionPost();
+                                                                        }, 100);
+                                                                    });
+                                                                } else {
+                                                                    return response.text().then(text => {
+                                                                        console.error('Non-JSON response (OK):', text.substring(0, 500));
+                                                                        throw new Error('Server returned non-JSON response');
+                                                                    });
+                                                                }
+                                                            } else {
+                                                                const contentType = response.headers.get('content-type');
+                                                                if (contentType && contentType.includes('application/json')) {
+                                                                    return response.json().then(data => {
+                                                                        alert('Error: ' + (data.error || 'Failed to post comment. Please make sure you are logged in.'));
+                                                                    }).catch(() => {
+                                                                        alert('Error: Failed to post comment. Please make sure you are logged in.');
+                                                                    });
+                                                                } else {
+                                                                    return response.text().then(text => {
+                                                                        console.error('Non-JSON response (Error):', text.substring(0, 500));
+                                                                        console.error('Response status:', response.status);
+                                                                        console.error('Response URL:', response.url);
+                                                                        alert('Error: Server returned non-JSON response. Status: ' + response.status + '. Check console for details.');
+                                                                    });
+                                                                }
+                                                            }
+                                                        })
+                                                        .catch(err => {
+                                                            alert('Error: ' + err.message);
+                                                            console.error(err);
+                                                        });
                                                 });
                                             }
                                         }, 100);
@@ -682,11 +682,11 @@
                                 })
                                 .catch(err => console.error("Error loading discussion:", err));
                         };
-                        
-                        marker.on('popupopen', function() {
+
+                        marker.on('popupopen', function () {
                             loadDiscussionPost();
                         });
-                        
+
                         const initialContent = `
                             <div class="incident-preview" style="max-width:300px;">
                                 <h3 style="color: #d32f2f; margin:0 0 10px 0; font-size:16px;">NYC Shooting Incident</h3>
@@ -698,8 +698,8 @@
                                 <p style="font-style:italic; color:#666; font-size:12px; margin-top:10px;">Loading discussion...</p>
                             </div>
                         `;
-                        
-                        marker.bindPopup(initialContent, {maxWidth: 350}).addTo(nycMarkers);
+
+                        marker.bindPopup(initialContent, { maxWidth: 350 }).addTo(nycMarkers);
                     }
                 });
                 updateHeatmap();
