@@ -182,6 +182,9 @@ router.post('/', async (req, res) => {
     // Try to create
     try {
         const newPost = await createPost(title, body, photo, location, borough, sensitive, userId, anonymous);
+        if (req.headers['content-type'] === 'application/json') {
+            return res.status(201).json(newPost);
+        }
         return res.status(201).redirect(`/posts/${newPost._id.toString()}`);
     } catch (e) {
         // Error classification
