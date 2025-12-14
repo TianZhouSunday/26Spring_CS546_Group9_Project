@@ -8,7 +8,7 @@ import { ObjectId } from "mongodb";
  * Required fields: title, body(optional), photo(optional), location, sensitive, user.
  * Initialize all other fields in the schema
  */
-export const createPost = async (title, body, photo, location, borough, sensitive, user, anonymous) => {
+export const createPost = async (title, body, photo, address, borough, sensitive, user, anonymous) => {
     //check validation
     //check title
     title = helper.AvailableString(title, 'title');
@@ -26,11 +26,18 @@ export const createPost = async (title, body, photo, location, borough, sensitiv
     }
 
     //check location
-    helper.AvailableObj(location, 'location');
-    if (!location.hasOwnProperty('longitude')) throw "Location must contain longitude.";
-    if (!location.hasOwnProperty('latitude')) throw "Location must contain latitude.";
-    if (typeof location.longitude !== 'number' || location.longitude < -74.258 || location.longitude > -73.699) throw "Location must be in NYC";
-    if (typeof location.latitude !== 'number' || location.latitude < 40.496 || location.latitude > 40.916) throw "Location must be in NYC";
+    address = helper.AvailableString(address, 'address');
+
+    const location = await geocodeAddress(address);
+
+    //location is in NYC
+    if (
+        location.longitude < -74.258 || location.longitude > -73.699 ||
+        location.latitude < 40.496 || location.latitude > 40.916
+    ) {
+        throw new Error ("Location must be in NYC");
+    }
+    
 
     //check borough
     const validBoroughs = ["Manhattan", "Brooklyn", "Queens", "The Bronx", "Staten Island"];
@@ -58,6 +65,7 @@ export const createPost = async (title, body, photo, location, borough, sensitiv
         body: body,
         photo: photo,
         date: new Date().toISOString(),
+        address,
         location: {
             longitude: location.longitude,
             latitude: location.latitude
@@ -381,3 +389,20 @@ export const ratePost = async (postId, userId, rating) => {
         throw "Failed rating post in DB";
     }
 }
+const geocodeAddress = async (address) => {
+    const encoded = encodeURIComponent(address);
+    const url = `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`;
+
+    const response = await fetch(url, {
+        headers: { 'User-Agent': 'NYC-Danger-Map/1.0' }
+    });
+
+    const data = await response.json();
+    if (!data.length) throw new Error('Invalid address');
+
+    return {
+        latitude: parseFloat(data[0].lat),
+        longitude: parseFloat(data[0].lon)
+    };
+};
+

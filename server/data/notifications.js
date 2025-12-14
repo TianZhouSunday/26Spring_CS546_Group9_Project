@@ -107,9 +107,22 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 // find users near a location and create notifications for them
-export const notifyNearbyUsers = async (postId, postTitle, postLat, postLng, radiusMiles = 1, excludeUserId = null) => {
-    const users = await getUsersCollection();
+export const notifyNearbyUsers = async (postId, postTitle, postAddress, radiusMiles = 1, excludeUserId = null) => {
+    let postLat, postLng;
+    try {
+        const coords = await geocodeAddress(postAddress);
+        postLat = coords.latitude;
+        postLng = coords.longitude;
+    } catch (error) {
+        console.error("Geocoding failed for post address:", error);
+        // If geocoding fails, we cannot proceed with distance calculation.
+        return []; 
+    }
     
+    // ****
+
+    const users = await getUsersCollection();
+
     // find users who have set their location and enabled notifications
     const usersWithLocation = await users.find({
         'location.latitude': { $exists: true, $ne: null },
@@ -120,18 +133,20 @@ export const notifyNearbyUsers = async (postId, postTitle, postLat, postLng, rad
     const notifiedUsers = [];
 
     for (const user of usersWithLocation) {
+        // ... (rest of the logic remains the same)
+
         // skip the user who created the post
         if (excludeUserId && user._id.toString() === excludeUserId.toString()) {
             continue;
         }
 
         const userRadius = user.notificationRadius || 1; // 1 mile
-
+        
         const distance = calculateDistance(
             user.location.latitude,
             user.location.longitude,
-            postLat,
-            postLng
+            postLat, // geocoded latitude
+            postLng  // geocoded longitude
         );
 
         // if user is within their preferred radius, create a notification
