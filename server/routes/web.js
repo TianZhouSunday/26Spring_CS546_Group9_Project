@@ -143,6 +143,8 @@ router.route('/posts').post(async (req, res) => {
   let longitude = req.body.longitude;
   let latitude = req.body.latitude;
   let sensitive = req.body.sensitive;
+  console.log("hi: " + req.body.anonymous);
+  let anonymous = (req.body.anonymous === 'on');
 
   if (!title || !longitude || !latitude) {
     try {
@@ -169,7 +171,7 @@ router.route('/posts').post(async (req, res) => {
   let userId = req.session.user._id.toString();
 
   try {
-    await createPost(title, body, photo, location, isSensitive, userId);
+    await createPost(title, body, photo, location, isSensitive, userId, anonymous);
     // Redirect logic: if created from map (which typically might be referred), 
     // we could check referer, but for now redirecting to posts list is standard behavior in this app
     res.redirect('/posts');
