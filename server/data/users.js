@@ -85,7 +85,7 @@ export const checkUser = async (email, password) => {
   if (!match) throw Error('checkUser: Invalid email or password');
 
   return {
-    _id: user._id,
+    _id: user._id.toString(),
     username: user.username,
     email: user.email,
     borough: user.borough,
@@ -127,11 +127,15 @@ export const updateUser = async (
   }
 
   // Check duplicates
-  const existingUsername = await userCollection.findOne({ username, _id: { $ne: _id } });
-  if (existingUsername) throw Error('updateUser: Username already exists');
+  const existingUsername = await userCollection.findOne({ username });
+  if (existingUsername && existingUsername._id.toString() !== userId) {
+    throw Error('updateUser: Username already exists');
+  }
 
-  const existingEmail = await userCollection.findOne({ email, _id: { $ne: _id } });
-  if (existingEmail) throw Error('updateUser: Email already in use');
+  const existingEmail = await userCollection.findOne({ email });
+  if (existingEmail && existingEmail._id.toString() !== userId) {
+    throw Error('updateUser: Email already in use');
+  }
 
 
   //validate remaining fields
@@ -146,11 +150,15 @@ export const updateUser = async (
     throw Error("updateUser: profile_picture must be a string URL or null");
   }
 
-  try {
-    new URL(profile_picture);
-  } 
-  catch {
-    throw new Error("Profile picture must be a valid URL.");
+  if (profile_picture) {
+    if (!profile_picture.startsWith('/public/')) {
+      try {
+        new URL(profile_picture);
+      }
+      catch {
+        throw new Error("Profile picture is not valid");
+      }
+    }
   }
 
 
@@ -210,11 +218,11 @@ export const changePassword = async (userId, currentPassword, newPassword) => {
 };
 
 export const getUserById = async (id) => {
-  if(!checkString(id)){
+  if (!checkString(id)) {
     throw Error("getUserById: input must be a nonempty string.");
   }
   id = id.trim();
-  if(!ObjectId.isValid(id)){
+  if (!ObjectId.isValid(id)) {
     throw Error("getUserById: input must be a valid object ID.");
   }
 
@@ -223,20 +231,20 @@ export const getUserById = async (id) => {
   let user = await userCollection.findOne({ _id: ObjectId.createFromHexString(id) });
 
   //throw if not found
-  if(!user) {
+  if (!user) {
     throw Error("getUserById: no user found with id " + id);
   }
   user._id = user._id.toString();
-  return movie;
+  return user;
 }
 
 export const blockUser = async (block_id, user_id) => {
-  if(!checkString(block_id) || !checkString(user_id)){
+  if (!checkString(block_id) || !checkString(user_id)) {
     throw Error("blockUser: inputs must be nonempty strings.");
   }
   block_id = block_id.trim();
   user_id = user_id.trim();
-  if(!ObjectId.isValid(block_id) || !ObjectId.isValid(user_id)){
+  if (!ObjectId.isValid(block_id) || !ObjectId.isValid(user_id)) {
     throw Error("blockUser: inputs must be valid object IDs.");
   }
 
@@ -245,7 +253,7 @@ export const blockUser = async (block_id, user_id) => {
   let user = await userCollection.findOne({ _id: ObjectId.createFromHexString(user_id) });
   let block_user = await userCollection.findOne({ _id: ObjectId.createFromHexString(block_id) });
   //throw if either user not found
-  if(!user || !block_user) {
+  if (!user || !block_user) {
     throw Error("blockUser: one or more users not found");
   }
 
