@@ -47,7 +47,7 @@ const exportMethods = {
         if (!updateUser.matchedCount) throw 'User not found';
         console.log('User updated successfully');
 
-        // Update post: add comment ID to post's comments list
+        // Update post: add comment ID to post's comments list and recalculate score
         const postCollection = await posts();
         let postObjectId;
         try {
@@ -61,8 +61,31 @@ const exportMethods = {
             { $push: { comments: newComment._id } }
         );
         if (!updatePost.matchedCount) throw 'Post not found';
-        console.log('Post updated successfully, returning comment');
 
+        // Recalculate post score
+        const allComments = await commentCollection.find({ post: postId }).toArray();
+        let totalScore = 0;
+        let scoreCount = 0;
+
+        allComments.forEach(c => {
+            if (typeof c.score === 'number') {
+                totalScore += c.score;
+                scoreCount++;
+            }
+        });
+
+        const newAvgScore = scoreCount > 0
+            ? Math.round((totalScore / scoreCount) * 10) / 10
+            : null;
+
+        await postCollection.updateOne(
+            { _id: postObjectId },
+            { $set: { post_score: newAvgScore } }
+        );
+
+        console.log('Post updated successfully with new score:', newAvgScore);
+
+        // Return comment with the new post score (optional, but helpful if needed)
         return newComment;
     },
 
@@ -103,9 +126,31 @@ const exportMethods = {
         } catch (e) {
             throw `Invalid post ID format in comment: ${comment.post}`;
         }
+
         await postCollection.updateOne(
             { _id: postObjectId },
             { $pull: { comments: new ObjectId(commentId) } }
+        );
+
+        // Recalculate post score after deletion
+        const allComments = await commentCollection.find({ post: comment.post }).toArray();
+        let totalScore = 0;
+        let scoreCount = 0;
+
+        allComments.forEach(c => {
+            if (typeof c.score === 'number') {
+                totalScore += c.score;
+                scoreCount++;
+            }
+        });
+
+        const newAvgScore = scoreCount > 0
+            ? Math.round((totalScore / scoreCount) * 10) / 10
+            : null;
+
+        await postCollection.updateOne(
+            { _id: postObjectId },
+            { $set: { post_score: newAvgScore } }
         );
 
         return { deleted: true };
@@ -115,6 +160,23 @@ const exportMethods = {
         postId = helper.AvailableID(postId, 'post ID');
         const commentCollection = await comments();
         const commentList = await commentCollection.find({ post: postId }).toArray();
+
+        const userCollection = await users();
+        for (const comment of commentList) {
+            try {
+                if (comment.user) {
+                    const user = await userCollection.findOne({ _id: new ObjectId(comment.user) });
+                    if (user) {
+                        comment.username = user.username;
+                    } else {
+                        comment.username = "Unknown User";
+                    }
+                }
+            } catch (e) {
+                comment.username = "Unknown User";
+            }
+        }
+
         return commentList;
     },
 

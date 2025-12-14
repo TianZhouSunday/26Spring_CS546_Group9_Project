@@ -1,7 +1,34 @@
 <div class="container">
     <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
-        <h1>My Posts</h1>
+        <h1>Community Posts</h1>
         <a href="/map" class="button-primary" style="text-decoration: none;">Create Post (Map)</a>
+    </div>
+
+    <div class="filter-container card" style="margin-bottom: 20px; padding: 15px;">
+        <form action="/posts" method="GET" style="display: flex; gap: 15px; align-items: end;">
+            <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                <label for="borough">Borough:</label>
+                <select name="borough" id="borough" style="width: 100%;">
+                    <option value="All" {{#if (eq selectedBorough 'All' )}}selected{{/if}}>All</option>
+                    <option value="Manhattan" {{#if (eq selectedBorough 'Manhattan' )}}selected{{/if}}>Manhattan
+                    </option>
+                    <option value="Brooklyn" {{#if (eq selectedBorough 'Brooklyn' )}}selected{{/if}}>Brooklyn</option>
+                    <option value="Queens" {{#if (eq selectedBorough 'Queens' )}}selected{{/if}}>Queens</option>
+                    <option value="The Bronx" {{#if (eq selectedBorough 'The Bronx' )}}selected{{/if}}>The Bronx
+                    </option>
+                    <option value="Staten Island" {{#if (eq selectedBorough 'Staten Island' )}}selected{{/if}}>Staten
+                        Island</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                <label for="rating">Min Rating:</label>
+                <input type="number" name="rating" id="rating" min="0" max="5" step="0.1" value="{{selectedRating}}"
+                    placeholder="Min Score (0-5)" style="width: 100%;">
+            </div>
+            <button type="submit" class="button-primary" style="height: fit-content;">Filter</button>
+            <a href="/posts" class="button button-secondary"
+                style="height: fit-content; text-decoration: none; display: flex; align-items: center;">Clear</a>
+        </form>
     </div>
 
     {{#if posts}}

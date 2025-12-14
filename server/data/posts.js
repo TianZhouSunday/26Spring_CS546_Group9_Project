@@ -8,7 +8,7 @@ import { ObjectId } from "mongodb";
  * Required fields: title, body(optional), photo(optional), location, sensitive, user.
  * Initialize all other fields in the schema
  */
-export const createPost = async (title, body, photo, location, sensitive, user) => {
+export const createPost = async (title, body, photo, location, borough, sensitive, user) => {
     //check validation
     //check title
     title = helper.AvailableString(title, 'title');
@@ -32,6 +32,15 @@ export const createPost = async (title, body, photo, location, sensitive, user) 
     if (typeof location.longitude !== 'number' || location.longitude < -74.258 || location.longitude > -73.699) throw "Location must be in NYC";
     if (typeof location.latitude !== 'number' || location.latitude < 40.496 || location.latitude > 40.916) throw "Location must be in NYC";
 
+    //check borough
+    const validBoroughs = ["Manhattan", "Brooklyn", "Queens", "The Bronx", "Staten Island"];
+    if (borough) {
+        borough = helper.AvailableString(borough, 'borough');
+        if (!validBoroughs.includes(borough)) throw "Invalid borough.";
+    } else {
+        borough = "Unknown";
+    }
+
     //check sensitive
     if (typeof sensitive !== 'boolean') throw "Sensitive must be a boolean.";
 
@@ -49,8 +58,9 @@ export const createPost = async (title, body, photo, location, sensitive, user) 
             longitude: location.longitude,
             latitude: location.latitude
         },
+        borough: borough,
         sensitive: sensitive,
-        post_score: 0,
+        post_score: null,
         user: user,
         comments: [],
         reports: [],
@@ -74,12 +84,29 @@ export const createPost = async (title, body, photo, location, sensitive, user) 
 
 
 /**
- * Get all existed posts
+ * Get all existed posts with optional filters
+ * @param {Object} filter - { borough: string, minScore: number }
  */
-export const getAllPosts = async () => {
+export const getAllPosts = async (filter = {}) => {
     try {
         const postCollection = await posts();
-        return await postCollection.find({ isHidden: { $ne: true } }).sort({ date: -1 }).toArray();
+        let query = { isHidden: { $ne: true } };
+
+        if (filter.borough && filter.borough !== "All") {
+            query.borough = filter.borough;
+        }
+
+        if (filter.minScore !== undefined && filter.minScore !== null && filter.minScore !== "") {
+            // If minScore is selected, we should filter by score. 
+            // Note: post_score can be null. If filtering by score, user usually expects posts WITH score >= min.
+            // or we can treat null as 0? Let's treat null as excluded if minScore > 0.
+            const min = parseFloat(filter.minScore);
+            if (!isNaN(min)) {
+                query.post_score = { $gte: min };
+            }
+        }
+
+        return await postCollection.find(query).sort({ date: -1 }).toArray();
     } catch (e) {
         console.error(e);
         throw "Failed getting all posts in DB";
@@ -93,7 +120,7 @@ export const getPostsByLocation = async (latitude, longitude, radius = 0.01) => 
     if (latitude < 40.496 || latitude > 40.916 || longitude < -74.258 || longitude > -73.699) {
         throw "Location must be in NYC";
     }
-    
+
     try {
         const postCollection = await posts();
         const postsList = await postCollection.find({
@@ -274,7 +301,7 @@ export const deletePost = async (id) => {
         if (deletedInfo.deletedCount === 0) throw "No post was found with this ID.";
 
         console.log(`Post(ID: ${id}) successfully deleted!`);
-        return {deleted: true, postId: id};
+        return { deleted: true, postId: id };
     } catch (e) {
         console.error(e);
         throw "Failed deleting post in DB.";
@@ -309,18 +336,18 @@ export const hidePost = async (id) => {
 export const ratePost = async (postId, userId, rating) => {
     postId = helper.AvailableID(postId, "post ID");
     userId = helper.AvailableID(userId, "user ID");
-    
+
     if (typeof rating !== 'number' || rating < 1 || rating > 5) {
         throw "Rating must be a number between 1 and 5";
     }
-    
+
     try {
         const postCollection = await posts();
         const post = await postCollection.findOne({ _id: new ObjectId(postId) });
         if (!post) throw "Post not found";
-        
+
         const existingRating = post.ratings.find(r => r.user.toString() === userId);
-        
+
         if (existingRating) {
             await postCollection.updateOne(
                 { _id: new ObjectId(postId), 'ratings.user': new ObjectId(userId) },
@@ -332,17 +359,17 @@ export const ratePost = async (postId, userId, rating) => {
                 { $push: { ratings: { user: new ObjectId(userId), rating: rating } } }
             );
         }
-        
+
         const updatedPost = await postCollection.findOne({ _id: new ObjectId(postId) });
-        const avgRating = updatedPost.ratings && updatedPost.ratings.length > 0 
-            ? updatedPost.ratings.reduce((sum, r) => sum + r.rating, 0) / updatedPost.ratings.length 
+        const avgRating = updatedPost.ratings && updatedPost.ratings.length > 0
+            ? updatedPost.ratings.reduce((sum, r) => sum + r.rating, 0) / updatedPost.ratings.length
             : 0;
-        
+
         await postCollection.updateOne(
             { _id: new ObjectId(postId) },
             { $set: { post_score: avgRating } }
         );
-        
+
         return { rating: rating, averageRating: avgRating };
     } catch (e) {
         console.error(e);

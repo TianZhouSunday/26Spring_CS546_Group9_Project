@@ -42,23 +42,55 @@
         opacity: 0.7;
     }
 
-    /* Map Controls - Floating Sidebar Style */
+    /* Map Controls - Floating Sidebar Style (Layers & Heatmap) */
     .map-controls {
         position: absolute;
-        top: 140px;
-        /* Moved down to avoid overlap */
+        top: 100px;
+        /* Moved up as filter is removed */
         left: 10px;
         z-index: 1000;
-        /* Above map */
         background: white;
         padding: 15px;
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         display: flex;
         flex-direction: column;
-        /* Stack vertically for better layout */
         gap: 10px;
         max-width: 250px;
+        max-height: 80vh;
+        /* Prevent overflow */
+        overflow-y: auto;
+        /* Scroll if needed */
+    }
+
+    /* Filter Bar - Horizontal Top Center */
+    .filter-bar {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        background: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .filter-bar label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+
+    .filter-bar select,
+    .filter-bar input[type="range"] {
+        cursor: pointer;
     }
 
     .map-controls label {
@@ -100,6 +132,29 @@
 
 <div id="map-container">
     <div id="map"></div>
+
+    <!-- Filter Bar (New) -->
+    <div class="filter-bar">
+        <label>
+            <strong>Filter:</strong>
+        </label>
+        <label>
+            Borough:
+            <select id="filterBorough" style="padding: 2px;">
+                <option value="All">All</option>
+                <option value="Manhattan">Manhattan</option>
+                <option value="Brooklyn">Brooklyn</option>
+                <option value="Queens">Queens</option>
+                <option value="The Bronx">The Bronx</option>
+                <option value="Staten Island">Staten Island</option>
+            </select>
+        </label>
+        <label>
+            Min Score: <span id="minScoreVal">0</span>
+            <input type="range" id="filterMinScore" min="0" max="5" step="0.5" value="0"
+                style="width: 100px; margin-left: 5px;">
+        </label>
+    </div>
 
     <!-- Map Controls Moved Inside Container -->
     <div class="map-controls">
@@ -181,6 +236,10 @@
         const communityMarkers = L.layerGroup().addTo(map);
         const nycMarkers = L.layerGroup().addTo(map);
 
+        // Store all markers for filtering
+        let allCommunityMarkers = [];
+        let allNycMarkers = [];
+
         // 4. Heatmap data arrays
         let communityHeatData = [];
         let nycHeatData = [];
@@ -244,7 +303,13 @@
                         communityHeatData.push([lat, lng, 0.5]);
 
                         const postId = post._id;
-                        const marker = L.marker([post.location.latitude, post.location.longitude], { icon: blueIcon });
+                        const marker = L.marker([post.location.latitude, post.location.longitude], {
+                            icon: blueIcon,
+                            borough: post.borough || "Unknown",
+                            score: post.post_score || 0
+                        });
+                        allCommunityMarkers.push(marker);
+                        marker.addTo(communityMarkers);
 
                         const loadCommentsAndUpdatePopup = function () {
                             fetch(`/api/posts/${postId}/comments`)
@@ -412,7 +477,12 @@
                         nycHeatData.push([lat, lng, 1.0]);
 
                         const incidentId = incident.incident_key || `${incident.occur_date}-${lat}-${lng}`;
-                        const marker = L.marker([incident.latitude, incident.longitude], { icon: redIcon });
+                        const marker = L.marker([incident.latitude, incident.longitude], {
+                            icon: redIcon,
+                            borough: incident.boro, // e.g. "BROOKLYN"
+                            score: 0
+                        });
+                        allNycMarkers.push(marker);
 
                         const loadDiscussionPost = function () {
                             fetch(`/api/posts?latitude=${lat}&longitude=${lng}&radius=0.001`)
@@ -727,18 +797,27 @@
             const popupContent = `
                 <div class="popup-form">
                     <h3>Report Incident Here</h3>
-                    <form action="/api/posts" method="POST">
+                    <form action="/posts" method="POST" enctype="multipart/form-data">
                         <input type="hidden" name="latitude" value="${lat}">
                         <input type="hidden" name="longitude" value="${lng}">
                         
                         <label>Title:</label>
                         <input type="text" name="title" required placeholder="Short title...">
                         
+                        <label>Borough:</label>
+                        <select name="borough" required style="width: 100%; margin-bottom: 8px; padding: 5px;">
+                            <option value="Manhattan">Manhattan</option>
+                            <option value="Brooklyn">Brooklyn</option>
+                            <option value="Queens">Queens</option>
+                            <option value="The Bronx">The Bronx</option>
+                            <option value="Staten Island">Staten Island</option>
+                        </select>
+                        
                         <label>Description:</label>
                         <textarea name="body" rows="3" placeholder="What happened?"></textarea>
                         
-                        <label>Photo URL (Optional):</label>
-                        <input type="text" name="photo" placeholder="http://...">
+                        <label>Photo (Optional):</label>
+                        <input type="file" name="photo" accept="image/*">
                         
                         <label>
                             <input type="checkbox" name="sensitive"> 
@@ -768,8 +847,6 @@
 
         document.getElementById('toggleMarkers').addEventListener('change', function () {
             if (this.checked) {
-                // If Markers turned ON, maybe turn Heatmap OFF? (Optional, let's keep it flexible or do the reverse)
-                // For now, just show the layers
                 if (document.getElementById('toggleCommunity').checked) {
                     map.addLayer(communityMarkers);
                 }
@@ -800,6 +877,59 @@
             updateHeatmap();
         });
 
+        // Filter Logic
+        const filterBorough = document.getElementById('filterBorough');
+        const filterMinScore = document.getElementById('filterMinScore');
+        const minScoreVal = document.getElementById('minScoreVal');
+
+        function applyMapFilters() {
+            const borough = filterBorough.value;
+            const minScore = parseFloat(filterMinScore.value);
+            minScoreVal.textContent = minScore;
+
+            // Clear current markers from groups
+            communityMarkers.clearLayers();
+            nycMarkers.clearLayers();
+
+            // Re-add matches for Community Markers
+            allCommunityMarkers.forEach(marker => {
+                let visible = true;
+                // Borough check
+                if (borough !== "All") {
+                    const b = marker.options.borough || "";
+                    if (b.toLowerCase() !== borough.toLowerCase()) visible = false;
+                }
+                // Score check
+                const score = marker.options.score || 0;
+                if (score < minScore) visible = false;
+
+                if (visible) {
+                    marker.addTo(communityMarkers);
+                }
+            });
+
+            // Re-add matches for NYC Markers
+            allNycMarkers.forEach(marker => {
+                let visible = true;
+                // Borough check
+                if (borough !== "All") {
+                    const b = marker.options.borough || "";
+                    if (b.toLowerCase() !== borough.toLowerCase()) visible = false;
+                }
+
+                const score = marker.options.score || 0;
+                if (score < minScore) visible = false;
+
+                if (visible) {
+                    marker.addTo(nycMarkers);
+                }
+            });
+
+        }
+
+        filterBorough.addEventListener('change', applyMapFilters);
+        filterMinScore.addEventListener('input', applyMapFilters);
+
         document.getElementById('heatRadius').addEventListener('input', function () {
             heatConfig.radius = parseInt(this.value);
             document.getElementById('radiusValue').textContent = this.value;
@@ -817,17 +947,17 @@
         legend.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'legend');
             div.innerHTML = `
-                <strong>Legend</strong><br>
-                <i style="background: #2b82cb"></i> Community Posts<br>
-                <i style="background: #cb2b3e"></i> NYC Shooting Data<br>
-                <br>
-                <strong>Heatmap Intensity</strong>
-                <div class="heatmap-gradient"></div>
-                <div class="gradient-labels">
-                    <span>Low</span>
-                    <span>High</span>
-                </div>
-            `;
+<strong>Legend</strong><br>
+<i style="background: #2b82cb"></i> Community Posts<br>
+<i style="background: #cb2b3e"></i> NYC Shooting Data<br>
+<br>
+<strong>Heatmap Intensity</strong>
+<div class="heatmap-gradient"></div>
+<div class="gradient-labels">
+    <span>Low</span>
+    <span>High</span>
+</div>
+`;
             return div;
         };
         legend.addTo(map);
@@ -837,38 +967,38 @@
         if (!confirm('Are you sure you want to delete this comment?')) {
             return;
         }
-        
+
         fetch(`/api/posts/${postId}/comments/${commentId}`, {
             method: 'DELETE',
             credentials: 'include'
         })
-        .then(response => {
-            if (response.ok) {
-                const commentElement = document.getElementById(`comment-${commentId}`);
-                if (commentElement) {
-                    commentElement.remove();
-                }
-                if (window.map) {
-                    const allMarkers = [];
-                    window.map.eachLayer(layer => {
-                        if (layer instanceof L.Marker && layer.isPopupOpen()) {
-                            allMarkers.push(layer);
-                        }
-                    });
-                    if (allMarkers.length > 0) {
-                        const openMarker = allMarkers[0];
-                        openMarker.fire('popupopen');
+            .then(response => {
+                if (response.ok) {
+                    const commentElement = document.getElementById(`comment-${commentId}`);
+                    if (commentElement) {
+                        commentElement.remove();
                     }
+                    if (window.map) {
+                        const allMarkers = [];
+                        window.map.eachLayer(layer => {
+                            if (layer instanceof L.Marker && layer.isPopupOpen()) {
+                                allMarkers.push(layer);
+                            }
+                        });
+                        if (allMarkers.length > 0) {
+                            const openMarker = allMarkers[0];
+                            openMarker.fire('popupopen');
+                        }
+                    }
+                } else {
+                    return response.json().then(data => {
+                        alert('Error: ' + (data.error || 'Failed to delete comment'));
+                    });
                 }
-            } else {
-                return response.json().then(data => {
-                    alert('Error: ' + (data.error || 'Failed to delete comment'));
-                });
-            }
-        })
-        .catch(err => {
-            alert('Error deleting comment: ' + err.message);
-            console.error(err);
-        });
+            })
+            .catch(err => {
+                alert('Error deleting comment: ' + err.message);
+                console.error(err);
+            });
     }
 </script>

@@ -1,26 +1,26 @@
-<div class="edit-profile-page">
+<div class="auth-container" style="max-width: 600px;">
     <h1>Edit Profile</h1>
 
     {{#if error}}
-    <div class="error-message">{{error}}</div>
+    <div class="error" style="text-align: center; margin-bottom: 15px;">{{error}}</div>
     {{/if}}
 
-    <form action="/edit-profile" method="POST" class="edit-profile-form" enctype="multipart/form-data">
+    <form action="/edit-profile" method="POST" enctype="multipart/form-data">
 
         <!--edit username-->
-        <div class="edit-profile-field">
+        <div class="form-group">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" value="{{user.username}}" required>
         </div>
 
         <!--change email-->
-        <div class="edit-profile-field">
+        <div class="form-group">
             <label for="email">Email</label>
             <input type="email" id="email" name="email" value="{{user.email}}" required>
         </div>
 
         <!-- borough dropdown -->
-        <div class="edit-profile-field">
+        <div class="form-group">
             <label for="borough">Borough</label>
             <select id="borough" name="borough" required>
                 <option value="Manhattan" {{#equals user.borough "Manhattan" }}selected{{/equals}}>Manhattan</option>
@@ -34,37 +34,31 @@
         </div>
 
         <!-- pfp  -->
-        <div class="edit-profile-field">
+        <div class="form-group">
             <label for="profile_picture">Profile Picture</label>
             {{#if user.profile_picture}}
-            <div class="current-pfp">
+            <div style="margin-bottom: 10px; text-align: center;">
                 <img src="{{user.profile_picture}}" alt="Current Profile Picture"
-                    style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; margin-bottom: 10px;">
+                    style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
             </div>
             {{/if}}
-            <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
+            <input type="file" id="profile_picture" name="profile_picture" accept="image/*" style="padding: 10px;">
+            <small style="color: #666; display: block; margin-top: 5px;">Upload a new image to replace your current
+                picture.</small>
         </div>
 
-
-
-
         <!--sensitive content checkbox-->
-        <div class="edit-profile-field checkbox-group">
-            <label for="hideSensitiveContent">
-                <input type="checkbox" id="hideSensitiveContent" name="hideSensitiveContent" {{#if
-                    user.hideSensitiveContent}}checked{{/if}}>
-                Hide Sensitive Content
-            </label>
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+            <input type="checkbox" id="hideSensitiveContent" name="hideSensitiveContent" {{#if
+                user.hideSensitiveContent}}checked{{/if}} style="width: auto; margin: 0;">
+            <label for="hideSensitiveContent" style="margin: 0; font-weight: normal; cursor: pointer;">Hide Sensitive
+                Content</label>
         </div>
 
         <!-- submit/cancel options -->
-        <div class="form-actions">
-            <button type="submit" class="button-primary">
-                Save Changes
-            </button>
-            <a href="/profile" class="button-secondary">
-                Cancel
-            </a>
+        <div class="form-actions" style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="submit" class="button-primary" style="flex: 1;">Save Changes</button>
+            <a href="/profile" class="button-secondary" style="flex: 1;">Cancel</a>
         </div>
 
     </form>
