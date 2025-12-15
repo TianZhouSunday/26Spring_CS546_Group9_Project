@@ -27,7 +27,7 @@ app.engine('handlebars', exphbs.engine({
   extname: ".handlebars",
   helpers: {
     equals(a, b, options) {
-      return a === b ? options.fn(this) : options.inverse(this);
+      return a == b ? options.fn(this) : options.inverse(this);
     },
     eq(a, b) {
       return a === b;

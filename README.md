@@ -36,7 +36,13 @@ npm start
 ```
 *The application will be accessible at [http://localhost:3000](http://localhost:3000).*
 
-**3. Database Configuration:**
+**3. Seed the Database:**
+To populate the database with initial users, posts, and comments, run the following command from the `server` directory:
+```bash
+npm run seed
+```
+
+**4. Database Configuration:**
 The application connects to a MongoDB database named `nyc_danger_map`. Ensure your MongoDB service is running before starting the server. Configuration can be found in `server/config/settings.js`.
 
 ### Online Demo:

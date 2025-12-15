@@ -2,6 +2,7 @@ import helper from './helpers.js';
 import commentData from './comments.js';
 import { posts } from "../config/mongoCollections.js";
 import { ObjectId } from "mongodb";
+import { notifyNearbyUsers } from './notifications.js';
 
 /**
  * Create a new post.
@@ -26,7 +27,7 @@ export const createPost = async (title, body, photo,addressOrCoords, borough, se
     }
     let location;
     let addressString;
-    
+
     if (typeof addressOrCoords === 'object' && addressOrCoords.latitude && addressOrCoords.longitude) {
         // (from map click)
         location = {
@@ -49,7 +50,7 @@ export const createPost = async (title, body, photo,addressOrCoords, borough, se
     ) {
         throw new Error ("Location must be in NYC");
     }
-    
+
 
     //check borough
     const validBoroughs = ["Manhattan", "Brooklyn", "Queens", "The Bronx", "Staten Island"];
@@ -100,6 +101,20 @@ export const createPost = async (title, body, photo,addressOrCoords, borough, se
         newPost._id = insertInfo.insertedId;
 
         console.log("Successfully created post", newPost);
+
+        // Notify nearby users
+        try {
+            await notifyNearbyUsers(
+                newPost._id,
+                newPost.title,
+                newPost.location,
+                newPost.user
+            );
+        } catch (err) {
+            console.error("Error sending notifications:", err);
+            // Don't fail the post creation if notifications fail
+        }
+
         return newPost;
     } catch (e) {
         console.error(e);

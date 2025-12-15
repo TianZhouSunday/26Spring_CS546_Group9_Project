@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { createUser, checkUser, updateUser, getUserById } from '../data/users.js';
-import { createUser, checkUser, updateUser } from '../data/users.js';
+
 import { getPostByUser } from '../data/posts.js';
 import multer from 'multer';
 import path from 'path';
@@ -95,7 +95,7 @@ router.get("/edit-profile", async (req, res) => {
     user: req.session.user
   });
 });
-  
+
 
 router.post("/edit-profile", upload.single('profile_picture'), async (req, res) => {
   if (!req.session.user) {
@@ -112,9 +112,9 @@ router.post("/edit-profile", upload.single('profile_picture'), async (req, res) 
       notificationsEnabled,
       hideSensitiveContent
     } = req.body;
-    const address = (typeof req.body.address === 'string' && req.body.address.trim()) 
-        ? req.body.address.trim() 
-        : null;
+    const address = (typeof req.body.address === 'string' && req.body.address.trim())
+      ? req.body.address.trim()
+      : null;
 
     let profilePictureUrl = user.profile_picture || null;
 
