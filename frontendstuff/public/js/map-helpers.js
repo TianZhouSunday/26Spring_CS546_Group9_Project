@@ -102,7 +102,6 @@ const MapHelpers = {
                 `<button type="button" onclick="window.ratePost('${postId}', ${r}, '${postId}')" style="flex:1; padding:6px; background:#fff; border:2px solid ${color}; color:${color}; cursor:pointer; font-size:12px; font-weight:bold; border-radius:3px; transition:all 0.2s;" onmouseover="this.style.background='${color}'; this.style.color='#fff';" onmouseout="this.style.background='#fff'; this.style.color='${color}';">${r}</button>`
             ).join('');
         } else if (type === 'nyc' && incidentData) {
-            // For NYC incidents, we need to pass a lot of params to rateNYCIncident
             // incidentData = { id, lat, lng, date, boro, time, locationDesc }
             const params = `'${incidentData.id}', \${r}, ${incidentData.lat}, ${incidentData.lng}, '${incidentData.date}', '${incidentData.boro}', '${incidentData.time}', '${(incidentData.locationDesc || 'Street').replace(/'/g, "\\'")}'`;
             buttonsHtml = [1, 2, 3, 4, 5].map(r =>

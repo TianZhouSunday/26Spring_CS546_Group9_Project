@@ -345,3 +345,19 @@ export const unblockUser = async (block_id, user_id) => {
 export const deleteUser = async (userId) => {
 
 }
+
+export const hideUser = async (userId) => {
+  if (!checkString(userId)) throw Error("hideUser: input must be a nonempty string.");
+  userId = userId.trim();
+  if (!ObjectId.isValid(userId)) throw Error("hideUser: input must be a valid object ID.");
+
+  const userCollection = await users();
+  const updateInfo = await userCollection.updateOne(
+    { _id: ObjectId.createFromHexString(userId) },
+    { $set: { isHidden: true } }
+  );
+
+  if (updateInfo.matchedCount === 0) throw Error("hideUser: User not found");
+
+  return { hidden: true };
+}

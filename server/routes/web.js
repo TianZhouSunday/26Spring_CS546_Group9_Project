@@ -246,8 +246,6 @@ router.route('/posts').post(upload.single('photo'), async (req, res) => {
 
   try {
     await createPost(title, body, photo, location, borough, isSensitive, userId, anonymous);
-    // Redirect logic: if created from map (which typically might be referred), 
-    // we could check referer, but for now redirecting to posts list is standard behavior in this app
     res.redirect('/posts');
   } catch (error) {
     let postList = await getAllPosts();
@@ -361,6 +359,21 @@ router.route('/posts/:id/comment').post(async (req, res) => {
   }
 
   try {
+    // Check if user is trying to comment on their own post
+    let post = await getPostById(id);
+    if (post.user.toString() === req.session.user._id.toString()) {
+      let user = await getUserById(post.user);
+      let comments = await commentData.getAllComments(id);
+      return res.status(403).render('post', {
+        title: post.title,
+        post: post,
+        user: user,
+        comments: comments,
+        currentUser: req.session.user,
+        error: "Error: You cannot comment on your own post."
+      });
+    }
+
     text = text.trim();
     await commentData.createComment(id, req.session.user._id.toString(), text, scoreNum);
     res.redirect(`/posts/${id}`);

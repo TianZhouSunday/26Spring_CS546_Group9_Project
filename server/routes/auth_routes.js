@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { createUser, checkUser, updateUser, getUserById } from '../data/users.js';
+import { createUser, checkUser, updateUser } from '../data/users.js';
+import { getPostByUser } from '../data/posts.js';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -166,15 +168,40 @@ router.post("/edit-profile", upload.single('profile_picture'), async (req, res) 
 
 
 //profile
-router.get('/profile', (req, res) => {
+router.get('/profile', async (req, res) => {
   if (!req.session.user) {
     return res.redirect('/login');
   }
-  res.render("profile", {
-    title: "Your Profile",
-    user: req.session.user,
-    self: true
-  });
+
+  try {
+    let posts = [];
+    try {
+      posts = await getPostByUser(req.session.user._id.toString());
+    } catch (e) {
+      // If no posts found, posts remains empty array
+    }
+
+    let totalScore = 0;
+    posts.forEach(p => {
+      if (p.post_score) totalScore += p.post_score;
+    });
+
+    const avgScore = posts.length > 0 ? (totalScore / posts.length) : 0;
+    const isStarContributor = posts.length >= 3 && avgScore >= 4.3;
+
+    res.render("profile", {
+      title: "Your Profile",
+      user: req.session.user,
+      self: true,
+      userScore: avgScore.toFixed(1),
+      isStarContributor: isStarContributor
+    });
+  } catch (error) {
+    return res.status(500).render('error', {
+      title: 'Error',
+      error: 'Error: Failed to load profile'
+    });
+  }
 });
 const geocodeAddress = async (address) => {
   const encoded = encodeURIComponent(address);

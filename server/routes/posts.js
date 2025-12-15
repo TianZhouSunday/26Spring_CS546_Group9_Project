@@ -122,6 +122,9 @@ router.post('/:id/rate', async (req, res) => {
         if (typeof e === 'string' && e.includes("not found")) {
             return res.status(404).json({ error: e.toString() });
         }
+        if (typeof e === 'string' && e.includes("own post")) {
+            return res.status(403).json({ error: e });
+        }
         console.error(e);
         res.status(500).json({ error: e.toString() });
     }
@@ -406,6 +409,11 @@ router.post('/:id/comments', async (req, res) => {
     }
 
     try {
+        const post = await getPostById(id);
+        if (post.user.toString() === userId) {
+            return res.status(403).json({ error: 'You cannot comment on your own post.' });
+        }
+
         console.log('Calling createComment...');
         const newComment = await commentData.createComment(id, userId, text, scoreNum);
         console.log('createComment returned:', newComment);

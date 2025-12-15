@@ -38,3 +38,6 @@ npm start
 
 **3. Database Configuration:**
 The application connects to a MongoDB database named `nyc_danger_map`. Ensure your MongoDB service is running before starting the server. Configuration can be found in `server/config/settings.js`.
+
+### Online Demo:
+We also used Droplet as an online server, which can be accessible via the link: http://165.22.38.90:3002/

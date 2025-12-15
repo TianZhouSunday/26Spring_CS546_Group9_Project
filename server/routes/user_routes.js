@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getUserById, blockUser, unblockUser } from '../data/users.js';
+import { getPostByUser } from '../data/posts.js';
 
 const router = Router();
 
@@ -18,7 +19,29 @@ router.get('/:userId', async (req, res) => {
         isBlocked = req.session.user.blocked_users.map(id => id.toString()).includes(req.params.userId);
         if (req.params.userId === req.session.user._id.toString()) isSelf = true;
 
-        return res.render("profile", {title: user.username, user: user, self: isSelf, blocked: isBlocked});
+        let posts = [];
+        try {
+            posts = await getPostByUser(req.params.userId);
+        } catch (e) {
+            // If no posts found, posts remains empty array
+        }
+
+        let totalScore = 0;
+        posts.forEach(p => {
+            if (p.post_score) totalScore += p.post_score;
+        });
+
+        const avgScore = posts.length > 0 ? (totalScore / posts.length) : 0;
+        const isStarContributor = posts.length >= 3 && avgScore >= 4.3;
+
+        return res.render("profile", {
+            title: user.username,
+            user: user,
+            self: isSelf,
+            blocked: isBlocked,
+            userScore: avgScore.toFixed(1),
+            isStarContributor: isStarContributor
+        });
     } catch (error) {
         if(error.message.includes("no user found")){
             return res.status(404).render("error", {
@@ -42,7 +65,7 @@ router.get('/:userId', async (req, res) => {
 })
 
 router.post("/:blockId/unblock", async (req, res) => {
-  try {
+    try {
         //check if the user is logged in
         if (!req.session.user) {
             return res.status(401).render("error", {
