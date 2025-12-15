@@ -107,18 +107,15 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 // find users near a location and create notifications for them
-export const notifyNearbyUsers = async (postId, postTitle, postAddress, radiusMiles = 1, excludeUserId = null) => {
-    let postLat, postLng;
-    try {
-        const coords = await geocodeAddress(postAddress);
-        postLat = coords.latitude;
-        postLng = coords.longitude;
-    } catch (error) {
-        console.error("Geocoding failed for post address:", error);
-        return []; 
+export const notifyNearbyUsers = async (postId, postTitle, postLocation, excludeUserId = null) => {
+    if (!postLocation || !postLocation.latitude || !postLocation.longitude) {
+        console.error("Invalid post location:", postLocation);
+        return [];
     }
-    
+    const postLat = postLocation.latitude;
+    const postLng = postLocation.longitude;
 
+    console.log(`Notifying users near location: ${postLat}, ${postLng}`);
     const users = await getUsersCollection();
 
     // find users who have set their location and enabled notifications
@@ -131,8 +128,6 @@ export const notifyNearbyUsers = async (postId, postTitle, postAddress, radiusMi
     const notifiedUsers = [];
 
     for (const user of usersWithLocation) {
-        // ... (rest of the logic remains the same)
-
         // skip the user who created the post
         if (excludeUserId && user._id.toString() === excludeUserId.toString()) {
             continue;
@@ -167,7 +162,6 @@ export const notifyNearbyUsers = async (postId, postTitle, postAddress, radiusMi
             }
         }
     }
-
     return notifiedUsers;
 };
 

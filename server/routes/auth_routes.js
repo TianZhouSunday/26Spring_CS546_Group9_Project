@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createUser, checkUser, updateUser } from '../data/users.js';
+import { createUser, checkUser, updateUser, getUserById } from '../data/users.js';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -84,7 +84,6 @@ router.get('/logout', (req, res) => {
 });
 
 // edit profile/settings
-// edit profile/settings
 router.get("/edit-profile", async (req, res) => {
   if (!req.session.user) {
     return res.redirect("/login");
@@ -107,11 +106,13 @@ router.post("/edit-profile", upload.single('profile_picture'), async (req, res) 
       username,
       email,
       borough,
-      address,
       notificationRadius,
       notificationsEnabled,
       hideSensitiveContent
     } = req.body;
+    const address = (typeof req.body.address === 'string' && req.body.address.trim()) 
+        ? req.body.address.trim() 
+        : null;
 
     let profilePictureUrl = user.profile_picture || null;
 
@@ -137,19 +138,19 @@ router.post("/edit-profile", upload.single('profile_picture'), async (req, res) 
       }
     }
 
-    const updatedUser = await updateUser(
+    await updateUser(
       user._id.toString(),
       username,
       email,
       borough,
       profilePictureUrl,
-      sensitivePref,
       address,
       location,
       notificationRadius ? Number(notificationRadius) : 1,
-      notificationsEnabled === "on"
+      notificationsEnabled === "on",
+      sensitivePref
     );
-
+    const updatedUser = await getUserById(user._id.toString());
     req.session.user = updatedUser;
 
     return res.redirect("/profile");

@@ -12,6 +12,7 @@ import {
 } from '../data/posts.js';
 import commentData from '../data/comments.js';
 import helper from '../data/helpers.js';
+import * as notificationsData from '../data/notifications.js';
 
 const router = Router();
 
@@ -159,7 +160,7 @@ router.post('/', async (req, res) => {
     if (!postDataBody || Object.keys(postDataBody).length === 0) {
         return res.status(400).json({ error: 'Request body must not be empty.' });
     }
-    let { title, body, photo, address, borough, sensitive, anonymous } = postDataBody;
+    let { title, body, photo,latitude, longitude, address, borough, sensitive, anonymous } = postDataBody;
     const userId = req.session.user._id.toString();
 
     if (sensitive === 'on') sensitive = true;
@@ -168,9 +169,34 @@ router.post('/', async (req, res) => {
     if (anonymous === 'on') anonymous = true;
     else if (anonymous !== true) anonymous = false;
 
+    // Build location object from latitude/longitude
+    let location = null;
+    if (latitude && longitude) {
+        location = {
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude)
+        };
+    }else if (address) {
+        locationOrAddress = address;
+    } else {
+        return res.status(400).json({ error: 'Location (latitude/longitude) or address is required.' });
+    }
     // Try to create
     try {
         const newPost = await createPost(title, body, photo, location, borough, sensitive, userId, anonymous);
+        try {
+            if (newPost.location && newPost.location.latitude && newPost.location.longitude) {
+                await notificationsData.notifyNearbyUsers(
+                    newPost._id.toString(),
+                    newPost.title,
+                    newPost.location,
+                    userId  // exclude the post creator from notifications
+                );
+            }
+        } catch (notifError) {
+            console.error('Failed to send notifications:', notifError);
+            // Don't fail the post creation if notifications fail
+        }
         if (req.headers['content-type'] === 'application/json') {
             return res.status(201).json(newPost);
         }

@@ -8,7 +8,7 @@ import { ObjectId } from "mongodb";
  * Required fields: title, body(optional), photo(optional), location, sensitive, user.
  * Initialize all other fields in the schema
  */
-export const createPost = async (title, body, photo, address, borough, sensitive, user, anonymous) => {
+export const createPost = async (title, body, photo,addressOrCoords, borough, sensitive, user, anonymous) => {
     //check validation
     //check title
     title = helper.AvailableString(title, 'title');
@@ -24,11 +24,23 @@ export const createPost = async (title, body, photo, address, borough, sensitive
     if (photo) {
         photo = helper.AvailableString(photo, 'photo path');
     }
-
-    //check location
-    address = helper.AvailableString(address, 'address');
-
-    const location = await geocodeAddress(address);
+    let location;
+    let addressString;
+    
+    if (typeof addressOrCoords === 'object' && addressOrCoords.latitude && addressOrCoords.longitude) {
+        // (from map click)
+        location = {
+            latitude: parseFloat(addressOrCoords.latitude),
+            longitude: parseFloat(addressOrCoords.longitude)
+        };
+        addressString = `${location.latitude}, ${location.longitude}`;
+    } else if (typeof addressOrCoords === 'string' && addressOrCoords.trim()) {
+        // geocode it
+        addressString = helper.AvailableString(addressOrCoords, 'address');
+        location = await geocodeAddress(addressString);
+    } else {
+        throw new Error("Must provide either an address or coordinates");
+    }
 
     //location is in NYC
     if (
@@ -65,7 +77,7 @@ export const createPost = async (title, body, photo, address, borough, sensitive
         body: body,
         photo: photo,
         date: new Date().toISOString(),
-        address,
+        address: addressString,
         location: {
             longitude: location.longitude,
             latitude: location.latitude
@@ -84,8 +96,8 @@ export const createPost = async (title, body, photo, address, borough, sensitive
     try {
         const postCollection = await posts();
         const insertInfo = await postCollection.insertOne(newPost);
-        if (!insertInfo.acknowledged || !insertInfo.insertedId) throw "Failed to create post"
-
+        if (!insertInfo.acknowledged || !insertInfo.insertedId) throw new Error("Failed to create post");
+        newPost._id = insertInfo.insertedId;
 
         console.log("Successfully created post", newPost);
         return newPost;
@@ -234,7 +246,7 @@ export const updatePost = async (id, updatedPost) => {
     //check title
     if (updatedPost.title) {
         let title = helper.AvailableString(updatedPost.title, 'title');
-        if (title.length < 3 && title.length > 30) throw "Title length must between 3 and 30 characters.";
+        if (title.length < 3 || title.length > 30) throw "Title length must between 3 and 30 characters.";
         updatedPostData.title = title;
     }
 
