@@ -1,36 +1,51 @@
-<div class="post-detail">
-    {{#if error}}
-    <div class="error-message"
-        style="background-color: #ffebee; color: #c62828; padding: 10px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #ef9a9a;">
-        {{error}}
-    </div>
-    {{/if}}
-    <article class="post-details {{#if post.sensitive}}sensitive{{/if}}">
-        <div class="post-header">
-            <h1>{{post.title}}</h1>
-            {{#if post.sensitive}}
-            <span class="sensitive-badge">Warning: Sensitive Content</span>
-            {{/if}}
+<div class="container">
+    <div class="post-detail-container">
+        {{#if error}}
+        <div class="error-message"
+            style="background-color: #ffebee; color: #c62828; padding: 10px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #ef9a9a;">
+            {{error}}
         </div>
-
-        <div class="post-info">
-            <!-- strong used for easy bolding/importance -->
-            <p><strong>Posted:</strong> {{post.date}}</p>
-            <p><strong>Location:</strong> {{post.location.latitude}}, {{post.location.longitude}}</p>
-            <p><strong>Usefulness Rating:</strong> {{formatRating post.post_score}}/5.0</p>
-            {{#if post.anonymous}}
-            <p><strong>Posted Anonymously</strong>
-                {{else}}
-            <p><strong>Posted by:</strong><a href="/user/{{post.user}}">{{user.username}}</a>
+        {{/if}}
+        <article class="post-details {{#if post.sensitive}}sensitive{{/if}}">
+            <div class="post-header">
+                <h1>{{post.title}}</h1>
+                {{#if post.sensitive}}
+                <span class="sensitive-badge">Warning: Sensitive Content</span>
                 {{/if}}
-        </div>
+            </div>
 
-        {{#if (and post.sensitive currentUser.hideSensitiveContent)}}
-        <details class="sensitive-content-container">
-            <summary class="sensitive-warning">
-                ⚠️ This post contains sensitive content (Click to view)
-            </summary>
+            <div class="post-info">
+                <!-- strong used for easy bolding/importance -->
+                <p><strong>Posted:</strong> {{post.date}}</p>
+                <p><strong>Location:</strong> {{post.location.latitude}}, {{post.location.longitude}}</p>
+                <p><strong>Usefulness Rating:</strong> {{formatRating post.post_score}}/5.0</p>
+                {{#if post.anonymous}}
+                <p><strong>Posted Anonymously</strong>
+                    {{else}}
+                <p><strong>Posted by:</strong><a href="/user/{{post.user}}">{{user.username}}</a>
+                    {{/if}}
+            </div>
 
+            {{#if (and post.sensitive currentUser.hideSensitiveContent)}}
+            <details class="sensitive-content-container">
+                <summary class="sensitive-warning">
+                    ⚠️ This post contains sensitive content (Click to view)
+                </summary>
+
+                {{#if post.photo}}
+                <div class="post-photo">
+                    <img src="{{post.photo}}" alt="{{post.title}}">
+                </div>
+                {{/if}}
+
+                {{#if post.body}}
+                <div class="post-content">
+                    <h2>Description</h2>
+                    <p>{{post.body}}</p>
+                </div>
+                {{/if}}
+            </details>
+            {{else}}
             {{#if post.photo}}
             <div class="post-photo">
                 <img src="{{post.photo}}" alt="{{post.title}}">
@@ -43,91 +58,78 @@
                 <p>{{post.body}}</p>
             </div>
             {{/if}}
-        </details>
-        {{else}}
-        {{#if post.photo}}
-        <div class="post-photo">
-            <img src="{{post.photo}}" alt="{{post.title}}">
-        </div>
-        {{/if}}
-
-        {{#if post.body}}
-        <div class="post-content">
-            <h2>Description</h2>
-            <p>{{post.body}}</p>
-        </div>
-        {{/if}}
-        {{/if}}
-
-        <div class="post-actions">
-            <a href="/posts" class="button">Back to Posts</a>
-
-            {{#if (eq post.user currentUser._id)}}
-            <form method="POST" action="/posts/{{post._id}}/delete" class="inline-form">
-                <button type="submit" class="button-danger"
-                    onclick="return confirm('Are you sure you want to delete this post?')">
-                    Delete Post
-                </button>
-            </form>
             {{/if}}
-        </div>
 
-        <div class="rating-section">
-            <h3>Rate This Incident</h3>
-            <p class="rating-section-text">Usefulness Rating: <strong class="rating-value">{{formatRating
-                    post.post_score}}</strong>/5.0</p>
-            <p class="rating-section-subtext">How useful is this incident report?</p>
-            {{#if (eq post.user currentUser._id)}}
-            <p><em>You cannot rate your own post.</em></p>
-            {{else}}
-            <div class="rating-buttons-container" id="rating-buttons">
-                <button type="button" onclick="ratePostPage('{{post._id}}', 1)" class="button rating-btn"
-                    data-rating="1">1</button>
-                <button type="button" onclick="ratePostPage('{{post._id}}', 2)" class="button rating-btn"
-                    data-rating="2">2</button>
-                <button type="button" onclick="ratePostPage('{{post._id}}', 3)" class="button rating-btn"
-                    data-rating="3">3</button>
-                <button type="button" onclick="ratePostPage('{{post._id}}', 4)" class="button rating-btn"
-                    data-rating="4">4</button>
-                <button type="button" onclick="ratePostPage('{{post._id}}', 5)" class="button rating-btn"
-                    data-rating="5">5</button>
-            </div>
-            {{/if}}
-        </div>
+            <div class="post-actions">
+                <a href="/posts" class="button">Back to Posts</a>
 
-        {{#if post.comments.length}}
-        <div class="comments-section">
-            <h2>Comments ({{comments.length}})</h2>
-
-            {{#each comments}}
-            <div class="comment" id="comment-{{this._id}}">
-                <p class="comment-text">{{this.text}}</p>
-                <p class="comment-author"><strong>User:</strong> <a href="/user/{{this.user}}">{{this.username}}</a></p>
-                <p class="comment-meta">Score: {{this.score}}</p>
-
-                {{#if (eq this.user ../currentUser._id)}}
-                <button type="button" class="button-danger delete-comment-btn" data-comment-id="{{this._id}}"
-                    data-post-id="{{../post._id}}"
-                    onclick="if(confirm('Are you sure you want to delete this comment?')) deleteComment('{{this._id}}', '{{../post._id}}')">
-                    Delete
-                </button>
+                {{#if (eq post.user currentUser._id)}}
+                <form method="POST" action="/posts/{{post._id}}/delete" class="inline-form">
+                    <button type="submit" class="button-danger"
+                        onclick="return confirm('Are you sure you want to delete this post?')">
+                        Delete Post
+                    </button>
+                </form>
                 {{/if}}
             </div>
-            {{/each}}
-        </div>
-        {{/if}}
 
-        <div class="add-comment-section">
-            <h3>Add a Comment</h3>
-            <form method="POST" action="/posts/{{post._id}}/comment">
-                <input type="hidden" name="score" id="comment-score" value="3">
-                <div class="form-group">
-                    <textarea name="text" rows="3" placeholder="Write your comment..." required></textarea>
+            <div class="rating-section">
+                <h3>Rate This Incident</h3>
+                <p class="rating-section-text">Usefulness Rating: <strong class="rating-value">{{formatRating
+                        post.post_score}}</strong>/5.0</p>
+                <p class="rating-section-subtext">How useful is this incident report?</p>
+                {{#if (eq post.user currentUser._id)}}
+                <p><em>You cannot rate your own post.</em></p>
+                {{else}}
+                <div class="rating-buttons-container" id="rating-buttons">
+                    <button type="button" onclick="ratePostPage('{{post._id}}', 1)" class="button rating-btn"
+                        data-rating="1">1</button>
+                    <button type="button" onclick="ratePostPage('{{post._id}}', 2)" class="button rating-btn"
+                        data-rating="2">2</button>
+                    <button type="button" onclick="ratePostPage('{{post._id}}', 3)" class="button rating-btn"
+                        data-rating="3">3</button>
+                    <button type="button" onclick="ratePostPage('{{post._id}}', 4)" class="button rating-btn"
+                        data-rating="4">4</button>
+                    <button type="button" onclick="ratePostPage('{{post._id}}', 5)" class="button rating-btn"
+                        data-rating="5">5</button>
                 </div>
-                <button type="submit" class="button-primary">Post Comment</button>
-            </form>
-        </div>
-    </article>
+                {{/if}}
+            </div>
+
+            {{#if post.comments.length}}
+            <div class="comments-section">
+                <h2>Comments ({{comments.length}})</h2>
+
+                {{#each comments}}
+                <div class="comment" id="comment-{{this._id}}">
+                    <p class="comment-text">{{this.text}}</p>
+                <p class="comment-author"><strong>User:</strong> <a href="/user/{{this.user}}">{{this.username}}</a></p>
+                    <p class="comment-meta">Score: {{this.score}}</p>
+
+                    {{#if (eq this.user ../currentUser._id)}}
+                    <button type="button" class="button-danger delete-comment-btn" data-comment-id="{{this._id}}"
+                        data-post-id="{{../post._id}}"
+                        onclick="if(confirm('Are you sure you want to delete this comment?')) deleteComment('{{this._id}}', '{{../post._id}}')">
+                        Delete
+                    </button>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+
+            <div class="add-comment-section">
+                <h3>Add a Comment</h3>
+                <form method="POST" action="/posts/{{post._id}}/comment">
+                    <input type="hidden" name="score" id="comment-score" value="3">
+                    <div class="form-group">
+                        <textarea name="text" rows="3" placeholder="Write your comment..." required></textarea>
+                    </div>
+                    <button type="submit" class="button-primary">Post Comment</button>
+                </form>
+            </div>
+        </article>
+    </div>
 </div>
 
 <script>
