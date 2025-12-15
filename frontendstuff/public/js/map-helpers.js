@@ -99,13 +99,13 @@ const MapHelpers = {
         let buttonsHtml = '';
         if (type === 'community') {
             buttonsHtml = [1, 2, 3, 4, 5].map(r =>
-                `<button type="button" onclick="window.ratePost('${postId}', ${r}, '${postId}')" style="flex:1; padding:6px; background:#fff; border:2px solid ${color}; color:${color}; cursor:pointer; font-size:12px; font-weight:bold; border-radius:3px; transition:all 0.2s;" onmouseover="this.style.background='${color}'; this.style.color='#fff';" onmouseout="this.style.background='#fff'; this.style.color='${color}';">${r}</button>`
+                `<button type="button" id="rate-btn-${postId}-${r}" class="rating-btn-${postId}" onclick="window.ratePost('${postId}', ${r}, '${postId}')" style="flex:1; padding:6px; background:#fff; border:2px solid ${color}; color:${color}; cursor:pointer; font-size:12px; font-weight:bold; border-radius:3px; transition:all 0.2s;" data-rating="${r}">${r}</button>`
             ).join('');
         } else if (type === 'nyc' && incidentData) {
             // incidentData = { id, lat, lng, date, boro, time, locationDesc }
             const params = `'${incidentData.id}', \${r}, ${incidentData.lat}, ${incidentData.lng}, '${incidentData.date}', '${incidentData.boro}', '${incidentData.time}', '${(incidentData.locationDesc || 'Street').replace(/'/g, "\\'")}'`;
             buttonsHtml = [1, 2, 3, 4, 5].map(r =>
-                `<button type="button" onclick="rateNYCIncident(${params.replace('${r}', r)})" style="flex:1; padding:6px; background:#fff; border:2px solid ${color}; color:${color}; cursor:pointer; font-size:12px; font-weight:bold; border-radius:3px; transition:all 0.2s;" onmouseover="this.style.background='${color}'; this.style.color='#fff';" onmouseout="this.style.background='#fff'; this.style.color='${color}';">${r}</button>`
+                `<button type="button" id="rate-btn-${incidentData.id}-${r}" class="rating-btn-${incidentData.id}" onclick="rateNYCIncident(${params.replace('${r}', r)})" style="flex:1; padding:6px; background:#fff; border:2px solid ${color}; color:${color}; cursor:pointer; font-size:12px; font-weight:bold; border-radius:3px; transition:all 0.2s;" data-rating="${r}">${r}</button>`
             ).join('');
         }
 
@@ -129,7 +129,7 @@ const MapHelpers = {
                 <strong style="font-size:12px;">Add a Comment:</strong>
                 <form id="comment-form-${postId}" style="margin-top:5px;">
                     <textarea name="text" rows="2" placeholder="Write your comment..." required style="width:100%; padding:5px; box-sizing:border-box; font-size:11px;"></textarea>
-                    <input type="number" name="score" min="0" max="5" value="3" required style="width:100%; padding:5px; margin-top:5px; box-sizing:border-box; font-size:11px;" placeholder="Comment Score (0-5)">
+                    <input type="hidden" name="score" id="comment-score-${postId}" value="3">
                     <button type="submit" style="width:100%; margin-top:5px; padding:5px; background:${color}; color:white; border:none; cursor:pointer; font-size:11px;">Post Comment</button>
                 </form>
             </div>
@@ -196,7 +196,7 @@ const MapHelpers = {
                 <p style="font-size:12px; margin:5px 0;"><strong>Start Discussion:</strong></p>
                 <form id="create-discussion-${incidentId}" style="margin-top:5px;">
                     <textarea name="comment" rows="2" placeholder="Add your comment or context..." required style="width:100%; padding:5px; box-sizing:border-box; font-size:11px;"></textarea>
-                    <input type="number" name="score" min="0" max="5" value="3" required style="width:100%; padding:5px; margin-top:5px; box-sizing:border-box; font-size:11px;" placeholder="Comment Score (0-5)">
+                    <input type="hidden" name="score" id="comment-score-${incidentId}" value="3">
                     <button type="submit" style="width:100%; margin-top:5px; padding:5px; background:#cb2b3e; color:white; border:none; cursor:pointer; font-size:11px;">Create Discussion & Comment</button>
                 </form>
             </div>
