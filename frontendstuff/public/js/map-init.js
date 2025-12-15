@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     fetch(`/api/posts/${postId}/comments`)
                         .then(response => response.json())
                         .then(comments => {
-                            // Generate HTML components using Helper
+                            // Generate HTML components
                             const commentsHtml = MapHelpers.generateCommentsHtml(comments, window.MapConfig.currentUserId, postId);
 
                             const avgRating = post.post_score ? post.post_score.toFixed(1) : '0.0';
@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const incidentId = incident.incident_key || `${incident.occur_date}-${lat}-${lng}`;
                     const marker = L.marker([incident.latitude, incident.longitude], {
                         icon: redIcon,
-                        borough: incident.boro, // e.g. "BROOKLYN"
+                        borough: incident.boro,
                         score: 0
                     });
                     allNycMarkers.push(marker);
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 );
 
                                 if (discussionPost) {
-                                    // Case 1: Discussion Exists
+                                    // If Discussion Exists
                                     Promise.all([
                                         fetch(`/api/posts/${discussionPost._id}/comments`).then(r => r.json()),
                                         fetch(`/api/posts/${discussionPost._id}`).then(r => r.json())

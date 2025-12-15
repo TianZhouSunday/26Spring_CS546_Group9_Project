@@ -1,4 +1,10 @@
 <div class="post-detail">
+    {{#if error}}
+    <div class="error-message"
+        style="background-color: #ffebee; color: #c62828; padding: 10px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #ef9a9a;">
+        {{error}}
+    </div>
+    {{/if}}
     <article class="post-details {{#if post.sensitive}}sensitive{{/if}}">
         <div class="post-header">
             <h1>{{post.title}}</h1>
@@ -71,6 +77,9 @@
             <p class="rating-section-text">Usefulness Rating: <strong class="rating-value">{{formatRating
                     post.post_score}}</strong>/5.0</p>
             <p class="rating-section-subtext">How useful is this incident report?</p>
+            {{#if (eq post.user currentUser._id)}}
+            <p><em>You cannot rate your own post.</em></p>
+            {{else}}
             <div class="rating-buttons-container" id="rating-buttons">
                 <button type="button" onclick="ratePostPage('{{post._id}}', 1)" class="button rating-btn"
                     data-rating="1">1</button>
@@ -83,6 +92,7 @@
                 <button type="button" onclick="ratePostPage('{{post._id}}', 5)" class="button rating-btn"
                     data-rating="5">5</button>
             </div>
+            {{/if}}
         </div>
 
         {{#if post.comments.length}}
