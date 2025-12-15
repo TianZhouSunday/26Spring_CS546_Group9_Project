@@ -1,9 +1,11 @@
 import { Router } from 'express';
+import { createUser, checkUser, updateUser, getUserById } from '../data/users.js';
 import { createUser, checkUser, updateUser } from '../data/users.js';
 import { getPostByUser } from '../data/posts.js';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fetch from 'node-fetch';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,7 +30,7 @@ router.get('/', async (req, res) => {
   res.render("home");
 });
 
-//accoutn creation
+//account creation
 router.get('/signup', async (req, res) => {
   if (req.session.user) {
     return res.redirect("/profile");
@@ -84,23 +86,21 @@ router.get('/logout', (req, res) => {
 });
 
 // edit profile/settings
-// edit profile/settings
 router.get("/edit-profile", async (req, res) => {
   if (!req.session.user) {
     return res.redirect("/login");
   }
-
-  return res.render("edit-profile", {
+  res.render("edit-profile", {
     title: "Edit Profile",
     user: req.session.user
   });
 });
+  
 
 router.post("/edit-profile", upload.single('profile_picture'), async (req, res) => {
   if (!req.session.user) {
     return res.redirect("/login");
   }
-
   try {
     const user = req.session.user;
 
@@ -108,13 +108,16 @@ router.post("/edit-profile", upload.single('profile_picture'), async (req, res) 
       username,
       email,
       borough,
+      notificationRadius,
+      notificationsEnabled,
       hideSensitiveContent
     } = req.body;
+    const address = (typeof req.body.address === 'string' && req.body.address.trim()) 
+        ? req.body.address.trim() 
+        : null;
 
-    // Default to existing profile picture
     let profilePictureUrl = user.profile_picture || null;
 
-    // If a new file is uploaded, update the URL
     if (req.file) {
       profilePictureUrl = `/public/uploads/${req.file.filename}`;
     }
@@ -122,20 +125,35 @@ router.post("/edit-profile", upload.single('profile_picture'), async (req, res) 
     const sensitivePref =
       hideSensitiveContent === "on" || hideSensitiveContent === true;
 
+    let location = user.location || null;
+
+    // address → location
+    if (address && address.trim()) {
+      location = await geocodeAddress(address);
+
+      // NYC check
+      if (
+        location.longitude < -74.258 || location.longitude > -73.699 ||
+        location.latitude < 40.496 || location.latitude > 40.916
+      ) {
+        throw new Error("Address must be within NYC");
+      }
+    }
+
     await updateUser(
       user._id.toString(),
       username,
       email,
       borough,
       profilePictureUrl,
+      address,
+      location,
+      notificationRadius ? Number(notificationRadius) : 1,
+      notificationsEnabled === "on",
       sensitivePref
     );
-
-    req.session.user.username = username.trim().toLowerCase();
-    req.session.user.email = email.trim().toLowerCase();
-    req.session.user.borough = borough;
-    req.session.user.profile_picture = profilePictureUrl;
-    req.session.user.hideSensitiveContent = sensitivePref;
+    const updatedUser = await getUserById(user._id.toString());
+    req.session.user = updatedUser;
 
     return res.redirect("/profile");
 
@@ -185,5 +203,22 @@ router.get('/profile', async (req, res) => {
     });
   }
 });
+const geocodeAddress = async (address) => {
+  const encoded = encodeURIComponent(address);
+  const url = `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`;
+
+  const response = await fetch(url, {
+    headers: { 'User-Agent': 'NYC-Danger-Map/1.0' }
+  });
+
+  const data = await response.json();
+  if (!data.length) throw new Error("Invalid address");
+
+  return {
+    latitude: parseFloat(data[0].lat),
+    longitude: parseFloat(data[0].lon)
+  };
+};
+
 
 export default router;

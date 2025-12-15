@@ -8,7 +8,7 @@ import { ObjectId } from "mongodb";
  * Required fields: title, body(optional), photo(optional), location, sensitive, user.
  * Initialize all other fields in the schema
  */
-export const createPost = async (title, body, photo, location, borough, sensitive, user, anonymous) => {
+export const createPost = async (title, body, photo,addressOrCoords, borough, sensitive, user, anonymous) => {
     //check validation
     //check title
     title = helper.AvailableString(title, 'title');
@@ -24,13 +24,32 @@ export const createPost = async (title, body, photo, location, borough, sensitiv
     if (photo) {
         photo = helper.AvailableString(photo, 'photo path');
     }
+    let location;
+    let addressString;
+    
+    if (typeof addressOrCoords === 'object' && addressOrCoords.latitude && addressOrCoords.longitude) {
+        // (from map click)
+        location = {
+            latitude: parseFloat(addressOrCoords.latitude),
+            longitude: parseFloat(addressOrCoords.longitude)
+        };
+        addressString = `${location.latitude}, ${location.longitude}`;
+    } else if (typeof addressOrCoords === 'string' && addressOrCoords.trim()) {
+        // geocode it
+        addressString = helper.AvailableString(addressOrCoords, 'address');
+        location = await geocodeAddress(addressString);
+    } else {
+        throw new Error("Must provide either an address or coordinates");
+    }
 
-    //check location
-    helper.AvailableObj(location, 'location');
-    if (!location.hasOwnProperty('longitude')) throw "Location must contain longitude.";
-    if (!location.hasOwnProperty('latitude')) throw "Location must contain latitude.";
-    if (typeof location.longitude !== 'number' || location.longitude < -74.258 || location.longitude > -73.699) throw "Location must be in NYC";
-    if (typeof location.latitude !== 'number' || location.latitude < 40.496 || location.latitude > 40.916) throw "Location must be in NYC";
+    //location is in NYC
+    if (
+        location.longitude < -74.258 || location.longitude > -73.699 ||
+        location.latitude < 40.496 || location.latitude > 40.916
+    ) {
+        throw new Error ("Location must be in NYC");
+    }
+    
 
     //check borough
     const validBoroughs = ["Manhattan", "Brooklyn", "Queens", "The Bronx", "Staten Island"];
@@ -58,6 +77,7 @@ export const createPost = async (title, body, photo, location, borough, sensitiv
         body: body,
         photo: photo,
         date: new Date().toISOString(),
+        address: addressString,
         location: {
             longitude: location.longitude,
             latitude: location.latitude
@@ -76,8 +96,8 @@ export const createPost = async (title, body, photo, location, borough, sensitiv
     try {
         const postCollection = await posts();
         const insertInfo = await postCollection.insertOne(newPost);
-        if (!insertInfo.acknowledged || !insertInfo.insertedId) throw "Failed to create post"
-
+        if (!insertInfo.acknowledged || !insertInfo.insertedId) throw new Error("Failed to create post");
+        newPost._id = insertInfo.insertedId;
 
         console.log("Successfully created post", newPost);
         return newPost;
@@ -223,7 +243,7 @@ export const updatePost = async (id, updatedPost) => {
     //check title
     if (updatedPost.title) {
         let title = helper.AvailableString(updatedPost.title, 'title');
-        if (title.length < 3 && title.length > 30) throw "Title length must between 3 and 30 characters.";
+        if (title.length < 3 || title.length > 30) throw "Title length must between 3 and 30 characters.";
         updatedPostData.title = title;
     }
 
@@ -382,6 +402,22 @@ export const ratePost = async (postId, userId, rating) => {
         throw "Failed rating post in DB";
     }
 }
+const geocodeAddress = async (address) => {
+    const encoded = encodeURIComponent(address);
+    const url = `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`;
+
+    const response = await fetch(url, {
+        headers: { 'User-Agent': 'NYC-Danger-Map/1.0' }
+    });
+
+    const data = await response.json();
+    if (!data.length) throw new Error('Invalid address');
+
+    return {
+        latitude: parseFloat(data[0].lat),
+        longitude: parseFloat(data[0].lon)
+    };
+};
 
 /**
  * Hide all posts by a specific user.
