@@ -102,9 +102,6 @@ export const getAllPosts = async (filter = {}) => {
         }
 
         if (filter.minScore !== undefined && filter.minScore !== null && filter.minScore !== "") {
-            // If minScore is selected, we should filter by score. 
-            // Note: post_score can be null. If filtering by score, user usually expects posts WITH score >= min.
-            // or we can treat null as 0? Let's treat null as excluded if minScore > 0.
             const min = parseFloat(filter.minScore);
             if (!isNaN(min)) {
                 query.post_score = { $gte: min };
@@ -351,6 +348,10 @@ export const ratePost = async (postId, userId, rating) => {
         const post = await postCollection.findOne({ _id: new ObjectId(postId) });
         if (!post) throw "Post not found";
 
+        if (post.user.toString() === userId) {
+            throw "You cannot rate your own post.";
+        }
+
         const existingRating = post.ratings.find(r => r.user.toString() === userId);
 
         if (existingRating) {
@@ -381,3 +382,26 @@ export const ratePost = async (postId, userId, rating) => {
         throw "Failed rating post in DB";
     }
 }
+
+/**
+ * Hide all posts by a specific user.
+ * @param {string} userId
+ */
+export const hideAllPostsByUser = async (userId) => {
+    userId = helper.AvailableID(userId, "user ID");
+
+    try {
+        const postCollection = await posts();
+        const updateInfo = await postCollection.updateMany(
+            { user: userId },
+            { $set: { isHidden: true } }
+        );
+
+        console.log(`Hidden ${updateInfo.modifiedCount} posts for user ${userId}`);
+        return { success: true, count: updateInfo.modifiedCount };
+    } catch (e) {
+        console.error(e);
+        throw "Failed hiding posts for user.";
+    }
+}
+

@@ -1,46 +1,166 @@
 <div class="profile-container">
     <h1>{{user.username}}'s Profile</h1>
 
+    {{#if isStarContributor}}
+    <div class="star-contributor-badge"
+        style="background-color: gold; color: #333; padding: 5px 12px; border-radius: 20px; font-weight: bold; margin-bottom: 15px; display: inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        ⭐ Star Contributor
+    </div>
+    {{/if}}
+
     {{#if user.profile_picture}}
-        <img
-            class="profile-photo"
-            alt="{{user.username}} Profile Photo"
-            src="{{user.profile_picture}}">
+    <img class="profile-photo" alt="{{user.username}} Profile Photo" src="{{user.profile_picture}}">
     {{else}}
-        <img
-            class="profile-photo"
-            alt="No profile photo available for {{user.username}}"
-            src="/public/Default_pfp.svg">
+    <img class="profile-photo" alt="No profile photo available for {{user.username}}" src="/public/Default_pfp.svg">
     {{/if}}
 
     <p>Borough: {{user.borough}}</p>
+    <p>User Score: <strong>{{userScore}}</strong> / 5.0</p>
 
     {{#if self}}
-        <div class="profile-actions">
-            <a href="/edit-profile" class="button-primary">
-                Edit Profile
-            </a>
-        </div>
+    <div class="profile-actions">
+        <a href="/edit-profile" class="button-primary">
+            Edit Profile
+        </a>
+    </div>
     {{else}}
+    <div class="profile-actions" style="gap: 10px; display: flex; align-items: center;">
         {{#if blocked}}
-            <div class="profile-actions">
-                <form method="POST" action="/user/{{user._id}}/unblock" class="inline-form">
-                <button type="submit" class="button-primary"
-                    onclick="return confirm('Are you sure you want to unblock this user?')">
-                    Unblock
-                </button>
-                </form>
-            </div>
+        <form method="POST" action="/user/{{user._id}}/unblock" class="inline-form">
+            <button type="submit" class="button-primary"
+                onclick="return confirm('Are you sure you want to unblock this user?')">
+                Unblock
+            </button>
+        </form>
         {{else}}
-            <div class="profile-actions">
-                <form method="POST" action="/user/{{user._id}}/block" class="inline-form">
-                <button type="submit" class="button-primary"
-                    onclick="return confirm('Are you sure you want to block this user?')">
-                    Block
-                </button>
-                </form>
-            </div>
+        <form method="POST" action="/user/{{user._id}}/block" class="inline-form">
+            <button type="submit" class="button-primary"
+                onclick="return confirm('Are you sure you want to block this user?')">
+                Block
+            </button>
+        </form>
         {{/if}}
+
+        <button id="open-report-modal" class="button-primary" type="button">Report User</button>
+    </div>
     {{/if}}
 
 </div>
+
+<!-- Report Modal -->
+<div id="report-modal" class="modal"
+    style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content"
+        style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 8px;">
+        <span class="close-button"
+            style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+        <h2 style="margin-top: 0;">Report {{user.username}}</h2>
+        <form id="report-form">
+            <input type="hidden" name="reported_entity" value="{{user._id}}">
+
+            <p style="margin-bottom: 10px;">Why are you reporting this user?</p>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px;"><input type="checkbox" name="type" value="Spam">
+                    Spam</label>
+                <label style="display: block; margin-bottom: 5px;"><input type="checkbox" name="type"
+                        value="Harassment"> Harassment</label>
+                <label style="display: block; margin-bottom: 5px;"><input type="checkbox" name="type"
+                        value="Inappropriate Content"> Inappropriate Content</label>
+                <label style="display: block; margin-bottom: 5px;"><input type="checkbox" name="type"
+                        value="Fake Account"> Fake Account</label>
+                <label style="display: block; margin-bottom: 5px;"><input type="checkbox" name="type" value="Other">
+                    Other</label>
+            </div>
+
+            <textarea name="text" rows="4" placeholder="Additional details..." required
+                style="width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+
+            <div style="text-align: right;">
+                <button type="button" class="button" id="cancel-report" style="margin-right: 10px;">Cancel</button>
+                <button type="submit" class="button-danger">Submit Report</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('report-modal');
+        const btn = document.getElementById('open-report-modal');
+        const span = document.querySelector('.close-button');
+        const cancelBtn = document.getElementById('cancel-report');
+        const form = document.getElementById('report-form');
+
+        if (btn) {
+            btn.onclick = function () {
+                modal.style.display = "block";
+            }
+        }
+
+        if (span) {
+            span.onclick = function () {
+                modal.style.display = "none";
+            }
+        }
+
+        if (cancelBtn) {
+            cancelBtn.onclick = function () {
+                modal.style.display = "none";
+            }
+        }
+
+        window.onclick = function (event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        if (form) {
+            form.onsubmit = async function (e) {
+                e.preventDefault();
+
+                const formData = new FormData(form);
+                const types = [];
+                document.querySelectorAll('input[name="type"]:checked').forEach((checkbox) => {
+                    types.push(checkbox.value);
+                });
+
+                const text = formData.get('text');
+                const reported_entity = formData.get('reported_entity');
+
+                if (types.length === 0) {
+                    alert("Please select at least one reason.");
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/reports', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            type: types,
+                            text: text,
+                            reported_entity: reported_entity
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        alert("Report submitted successfully.");
+                        modal.style.display = "none";
+                        form.reset();
+                    } else {
+                        alert("Error: " + (result.error || "Failed to submit report"));
+                    }
+                } catch (err) {
+                    console.error('Error submitting report:', err);
+                    alert("An error occurred. Please try again.");
+                }
+            }
+        }
+    });
+</script>
