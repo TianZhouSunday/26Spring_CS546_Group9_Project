@@ -30,7 +30,7 @@ app.engine('handlebars', exphbs.engine({
       return a == b ? options.fn(this) : options.inverse(this);
     },
     eq(a, b) {
-      return a === b;
+      return a == b;
     },
     and(a, b) {
       return a && b;
